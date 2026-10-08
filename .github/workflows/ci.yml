@@ -1,0 +1,47 @@
+name: Test skill and XeLaTeX template
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scripts:
+    name: PDF tooling regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compile Python scripts
+        run: python -m compileall -q scripts tests
+      - name: Synthetic PDF and LaTeX lint tests
+        run: python -m unittest discover -s tests -v
+
+  latex:
+    name: XeLaTeX demonstration smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install LaTeX and CJK fonts
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            latexmk texlive-xetex texlive-latex-extra texlive-lang-chinese \
+            texlive-science texlive-fonts-recommended fonts-noto-cjk
+      - name: Initialize an independent project
+        run: python scripts/init_project.py /tmp/paper-translation-smoke
+      - name: Compile and audit example
+        run: make -C /tmp/paper-translation-smoke
+      - name: Ensure native citation links work
+        run: |
+          python /tmp/paper-translation-smoke/scripts/audit_pdf.py \
+            /tmp/paper-translation-smoke/build/paper-final.pdf --mode native --strict

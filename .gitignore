@@ -1,0 +1,43 @@
+# Generated PDF builds and working data
+build/
+/work/
+/source-render/
+/final-render/
+/asset-previews/
+# Keep the starter's ledger and empty asset directories under version control.
+!/assets/latex-template/work/
+!/assets/latex-template/work/coverage.tsv
+*.aux
+*.log
+*.xdv
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# Potentially licensed/source-sensitive paper assets
+sources/*.pdf
+figures/*.pdf
+
+# Python tools
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local credentials, editor junk
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Release archives
+*.zip

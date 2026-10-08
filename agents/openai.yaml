@@ -1,0 +1,6 @@
+interface:
+  display_name: "Paper Translation"
+  short_description: "Faithful research-paper PDF translation with vector figures and linked citations"
+  default_prompt: "Translate this entire academic PDF into a polished Chinese XeLaTeX reading edition; preserve every equation, vector figure, original algorithm, bibliography and cross-reference."
+policy:
+  allow_implicit_invocation: true

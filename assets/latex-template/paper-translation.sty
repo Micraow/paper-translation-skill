@@ -1,0 +1,247 @@
+% paper-translation.sty -- generic Chinese academic-paper translation style
+% Engine: XeLaTeX
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{paper-translation}[2026/10/08 v2.0 Academic Paper Translation]
+
+\RequirePackage{iftex}
+\ifXeTeX\else
+  \PackageError{paper-translation}{This package requires XeLaTeX}{Compile with xelatex or latexmk -xelatex.}
+\fi
+
+\RequirePackage{etoolbox}
+\RequirePackage{fontspec}
+\RequirePackage{xeCJK}
+\RequirePackage{mathtools}
+\RequirePackage{unicode-math}
+\RequirePackage{amsthm}
+\RequirePackage{xcolor}
+\RequirePackage{geometry}
+\RequirePackage{setspace}
+\RequirePackage{microtype}
+\RequirePackage{enumitem}
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{tabularx}
+\RequirePackage{longtable}
+\RequirePackage{xltabular}
+\RequirePackage{adjustbox}
+\RequirePackage{makecell}
+\RequirePackage{siunitx}
+\RequirePackage{graphicx}
+\RequirePackage{float}
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\RequirePackage{pdfpages}
+\RequirePackage{needspace}
+\RequirePackage{xurl}
+\RequirePackage{hyperref}
+\RequirePackage[automark,singlespacing=true,headsepline=.28pt,footsepline=.28pt]{scrlayer-scrpage}
+
+% ---------- Metadata ----------
+\newcommand{\papertitle}{论文标题}
+\newcommand{\papersubtitle}{}
+\newcommand{\paperauthors}{原文作者}
+\newcommand{\paperaffiliations}{}
+\newcommand{\papervenue}{}
+\newcommand{\paperurl}{}
+\newcommand{\documentdate}{}
+\newcommand{\translationcredit}{}
+
+% ---------- Page ----------
+\geometry{
+  a4paper,
+  margin=2.55cm,
+  includehead=true,
+  includefoot=true,
+  head=20pt,
+  headsep=0.82cm,
+  footskip=1.15cm,
+  centering
+}
+\setstretch{1.36}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{4em}
+\raggedbottom
+
+% ---------- Fonts ----------
+% The Latin body deliberately prefers Latin Modern Roman. This is an explicit
+% design choice, not an accidental fallback. No font binaries are bundled.
+\IfFontExistsTF{LMRoman10}{
+  \setmainfont{LMRoman10}
+}{
+  \setmainfont{TeX Gyre Termes}
+}
+
+\IfFontExistsTF{Noto Sans}{
+  \setsansfont{Noto Sans}
+}{
+  \IfFontExistsTF{LMSans10}{\setsansfont{LMSans10}}{\setsansfont{TeX Gyre Heros}}
+}
+
+\IfFontExistsTF{JetBrains Mono}{
+  \setmonofont{JetBrains Mono}
+}{
+  \IfFontExistsTF{Source Code Pro}{\setmonofont{Source Code Pro}}{\setmonofont{LMMono10}}
+}
+
+\IfFontExistsTF{Source Han Serif CN}{
+  \setCJKmainfont{Source Han Serif CN}
+}{
+  \IfFontExistsTF{Noto Serif CJK SC}{
+    \setCJKmainfont{Noto Serif CJK SC}
+  }{
+    \setCJKmainfont{Noto Serif SC}
+  }
+}
+
+\IfFontExistsTF{Source Han Sans CN}{
+  \setCJKsansfont{Source Han Sans CN}
+}{
+  \IfFontExistsTF{Noto Sans CJK SC}{
+    \setCJKsansfont{Noto Sans CJK SC}
+  }{
+    \setCJKsansfont{Noto Sans SC}
+  }
+}
+
+\IfFontExistsTF{Source Han Sans CN}{
+  \setCJKmonofont{Source Han Sans CN}
+}{
+  \IfFontExistsTF{Noto Sans CJK SC}{
+    \setCJKmonofont{Noto Sans CJK SC}
+  }{
+    \setCJKmonofont{Noto Sans SC}
+  }
+}
+
+\IfFontExistsTF{DejaVu Math TeX Gyre}{
+  \setmathfont{DejaVu Math TeX Gyre}
+}{
+  \setmathfont{Latin Modern Math}
+}
+
+\xeCJKDeclareCharClass{CJK}{"2103}
+
+% ---------- Palette ----------
+\definecolor{PaperHeading}{HTML}{25364A}
+\definecolor{PaperAccent}{HTML}{5F7390}
+\definecolor{PaperMuted}{HTML}{7D8796}
+\definecolor{PaperRule}{HTML}{D8E0EA}
+\definecolor{PaperLink}{HTML}{8A3049}
+\definecolor{PaperURL}{HTML}{2E6C96}
+
+% ---------- Headings ----------
+\setkomafont{section}{\sffamily\bfseries\fontsize{18.5pt}{23pt}\selectfont\color{PaperHeading}}
+\setkomafont{subsection}{\sffamily\bfseries\fontsize{14pt}{18pt}\selectfont\color{PaperHeading}}
+\setkomafont{subsubsection}{\sffamily\bfseries\fontsize{12.2pt}{15.5pt}\selectfont\color{PaperHeading}}
+\RedeclareSectionCommand[beforeskip=1.45\baselineskip,afterskip=.72\baselineskip]{section}
+\RedeclareSectionCommand[beforeskip=1.00\baselineskip,afterskip=.48\baselineskip]{subsection}
+\RedeclareSectionCommand[beforeskip=.80\baselineskip,afterskip=.32\baselineskip]{subsubsection}
+
+% ---------- Header/footer ----------
+\clearpairofpagestyles
+\setkomafont{pageheadfoot}{\small\sffamily\color{PaperMuted}}
+\setkomafont{pagenumber}{\small\sffamily\color{PaperHeading}}
+\ihead{\papertitle}
+\ohead{\papervenue}
+\cfoot{\pagemark}
+\ifoot{\translationcredit}
+\ofoot{\documentdate}
+\pagestyle{scrheadings}
+
+% ---------- Math ----------
+\allowdisplaybreaks[2]
+\setlength{\abovedisplayskip}{10pt plus 3pt minus 2pt}
+\setlength{\belowdisplayskip}{10pt plus 3pt minus 2pt}
+\setlength{\abovedisplayshortskip}{6pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt}
+\theoremstyle{plain}
+\newtheorem{theorem}{定理}[section]
+\newtheorem{lemma}[theorem]{引理}
+\newtheorem{proposition}[theorem]{命题}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定义}
+\theoremstyle{remark}
+\newtheorem*{remark}{注}
+\renewcommand{\proofname}{证明}
+
+% ---------- Lists ----------
+\setlist{itemsep=.55em,parsep=.18em,topsep=.6em,partopsep=0pt}
+\setlist[enumerate]{leftmargin=2.2em}
+\setlist[itemize]{leftmargin=1.85em}
+
+% ---------- Tables ----------
+\sisetup{detect-all,per-mode=symbol,range-phrase=--,range-units=single}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\tablecomfortable}{\small\setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.18}}
+\newcommand{\tablecompact}{\footnotesize\setlength{\tabcolsep}{3.5pt}\renewcommand{\arraystretch}{1.12}}
+
+% ---------- Figures/captions ----------
+\graphicspath{{figures/}}
+\captionsetup{
+  font=small,
+  labelfont={bf,sf,color=PaperHeading},
+  textfont={color=PaperMuted},
+  labelsep=quad,
+  skip=6pt
+}
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+\floatplacement{figure}{htbp}
+\floatplacement{table}{htbp}
+
+\newcommand{\translatedfigure}[4][.92]{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=#1\linewidth]{#2}
+    \caption{#3}\label{#4}
+  \end{figure}%
+}
+
+\newcommand{\preservedalgorithm}[2][.95]{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=#1\linewidth]{#2}
+  \end{figure}%
+}
+
+% ---------- Links ----------
+\hypersetup{
+  unicode=true,
+  colorlinks=true,
+  linkcolor=PaperLink,
+  citecolor=PaperLink,
+  urlcolor=PaperURL,
+  pdfborder={0 0 0}
+}
+
+% ---------- Cover ----------
+\newcommand{\makepapercover}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    \vspace*{2.0cm}
+    {\sffamily\bfseries\fontsize{27pt}{35pt}\selectfont\color{PaperHeading}\papertitle\par}
+    \ifdefempty{\papersubtitle}{}{\vspace{.7em}{\large\color{PaperMuted}\papersubtitle\par}}
+    \vspace{1.7cm}
+    {\large\paperauthors\par}
+    \ifdefempty{\paperaffiliations}{}{\vspace{.55em}{\color{PaperMuted}\paperaffiliations\par}}
+    \vfill
+    \ifdefempty{\papervenue}{}{\textbf{\papervenue}\par}
+    \ifdefempty{\documentdate}{}{\vspace{.35em}\documentdate\par}
+    \ifdefempty{\paperurl}{}{\vspace{.8em}\url{\paperurl}\par}
+    \ifdefempty{\translationcredit}{}{\vspace{1.2em}{\small\color{PaperMuted}\translationcredit\par}}
+    \vspace*{1.0cm}
+  \end{titlepage}
+}
+
+\newenvironment{translationnote}{%
+  \par\medskip\noindent
+  \begin{minipage}{\linewidth}
+  \color{PaperMuted}\small
+  \textbf{译排说明。}\ignorespaces
+}{%
+  \end{minipage}\par\medskip
+}

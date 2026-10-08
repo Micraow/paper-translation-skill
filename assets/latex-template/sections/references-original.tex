@@ -1,0 +1,13 @@
+% PDF bibliography path: preserve the complete original reference pages.
+% Every body citation is rendered as a visible [number]; Makefile automatically
+% restores GoTo annotations and fails if expected links cannot be restored.
+\clearpage
+\ifdefempty{\OriginalReferencePages}{%
+  \PackageError{paper-translation}{OriginalReferencePages is empty}{Set \string\OriginalReferencePages\space in main.tex, e.g. 14-17.}%
+}{%
+  \IfFileExists{sources/original.pdf}{%
+    \includepdf[pages={\OriginalReferencePages},scale=.97,pagecommand={\thispagestyle{empty}}]{sources/original.pdf}%
+  }{%
+    \PackageError{paper-translation}{Missing sources/original.pdf}{Copy the original PDF into sources/original.pdf.}%
+  }%
+}

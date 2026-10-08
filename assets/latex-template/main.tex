@@ -1,0 +1,42 @@
+% paper-translation / XeLaTeX example project.
+% Default: make                         (native LaTeX bibliography)
+% Alternative: make BIB_MODE=pdf        (original PDF references + GoTo links)
+\documentclass[12pt,a4paper]{scrartcl}
+\usepackage{paper-translation}
+
+\renewcommand{\papertitle}{论文中文标题}
+\renewcommand{\papersubtitle}{Original Paper Title · 中文全文精译}
+\renewcommand{\paperauthors}{Original Authors}
+\renewcommand{\paperaffiliations}{Original affiliations}
+\renewcommand{\papervenue}{Conference / Year}
+\renewcommand{\paperurl}{}
+\renewcommand{\documentdate}{}
+\renewcommand{\translationcredit}{}
+
+% Original source PDF page range containing references; only for BIB_MODE=pdf.
+% Example: \renewcommand{\OriginalReferencePages}{14-17}
+\newcommand{\OriginalReferencePages}{}
+
+% Build configuration is written by Makefile. Do not hand-edit it.
+\IfFileExists{build/translation-config.tex}{\input{build/translation-config.tex}}{\def\TranslationReferenceMode{native}}
+
+\begin{document}
+\makepapercover
+
+\begin{translationnote}
+本示例展示译排样式，并非一篇真实论文的完整译文。实际使用时应保留原论文所有章节、图表、公式、引用、算法和附录，并完成逐段核对与视觉验收。
+\end{translationnote}
+
+\input{sections/00-abstract}
+\input{sections/01-introduction}
+% Continue sections in exact source order, for example:
+% \input{sections/02-background}
+% \input{sections/03-design}
+\input{sections/appendices}
+
+\ifstrequal{\TranslationReferenceMode}{pdf}{%
+  \input{sections/references-original}%
+}{%
+  \input{sections/references}%
+}
+\end{document}
