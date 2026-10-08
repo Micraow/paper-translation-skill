@@ -34,6 +34,12 @@ cd /work/translation
 
 Always keep the source PDF unchanged, ideally record its SHA-256. The project is independent and rebuildable; source extraction scripts are copied into it.
 
+## Token-aware execution (default, without lost coverage)
+
+**Progressive disclosure:** read this `SKILL.md` once, then load only the phase-specific `references/*.md` needed. Store complete PDF extracts, images, ledger and state **on disk**, never paste them into every model turn. After `seed_coverage.py`, use `make packets` and open `work/context-packets/index.md` plus **one section packet**, glossary matches and relevant original rendered pages; inspect equations, plots, column joins and dubious glyphs visually. For a resumed section, use `prepare_section_packets.py --pending-only --target sections/XX.tex`. The packetizer checks ID completeness but **never approves** coverage rows.
+
+After each verified section, save `.tex`, glossary, crop manifest and reviewed ledger; the next turn uses these artifacts, not entire prior chats. `make` prints bounded build diagnostics and stores the complete log at `work/latexmk-console.log`. Never skip `make release`, bibliography links or final page-by-page source comparison. Do not shorten translated prose/appendices just to save tokens. Prompt caching / cheaper models are optional provider-dependent decisions, not correctness guarantees. See `references/TOKEN_EFFICIENCY.md` **only when needed**.
+
 ## Workflow — do not skip phases
 
 ### Phase 1 · Inventory the exact source
@@ -63,7 +69,16 @@ python3 scripts/seed_coverage.py work/source-blocks.tsv \
   --project-root . --output work/coverage.tsv
 ```
 
-The seeder **requires every source heading to match exactly once in order** and leaves all statuses `todo`. Its target/status suggestions are not evidence of translation. Process the paper *section by section*: compare each source paragraph with the rendered original, translate into the corresponding `sections/*.tex`, and mark the reviewed rows. To confirm a reviewed section in one operation:
+The seeder **requires every source heading to match exactly once in order** and leaves all statuses `todo`. Its target/status suggestions are not evidence of translation. Generate compact source packets for the **next** section instead of repeatedly passing the entire original to the agent:
+
+```bash
+make packets  # produces work/context-packets/index.md + index.json and per-section .md files
+# Or just the pending Introduction blocks when resuming:
+python3 scripts/prepare_section_packets.py --pending-only \
+  --target sections/01-introduction.tex --out-dir work/pending-packets
+```
+
+Open the relevant packet and inspect its referenced original rendered pages; inspect formulas/figures visually, because PDF-extracted symbols can be wrong. **No packet marks a ledger row reviewed.** Process the paper *section by section*: compare each source paragraph with the rendered original, translate into the corresponding `sections/*.tex`, and mark the reviewed rows. To confirm a reviewed section in one operation:
 
 ```bash
 python3 scripts/confirm_coverage.py work/coverage.tsv --status translated \

@@ -34,6 +34,7 @@
 | 能力 | 具体做法 |
 |:--|:--|
 | 🧭 **防止漏译** | 通过章节标题 + 矢量裁图几何信息自动生成覆盖率**候选映射**；必须逐节核对，不能假装自动完成翻译。 |
+| ⚡ **少花冤枉 Token** | 按章节生成精简上下文包，重复页和冗长编译日志不再灌入模型；原文块 ID 和完整 QA 保留。 |
 | 🧪 **技术语义优先** | 保留作者措辞的确定性程度、因果方向、数值、单位、百分位数、公式与实验结论。 |
 | ✒️ **真正的译排** | 输出可搜索、可复制的中文正文与 LaTeX 数学公式，而不是整页截图。 |
 | 🧬 **矢量图优先** | 照片提取原始图像对象；统计图与架构图按 PDF 矢量区域直接裁取，完整保留轴线、图例和标注。 |
@@ -81,6 +82,22 @@ flowchart LR
 6. **反复验收**：编译 → 代码/引用/覆盖检查 → 逐页渲染 → 修复 → 再渲染。
 
 完整的 Agent 操作说明在 [`SKILL.md`](SKILL.md)，细则在 [`references/`](references/)。
+
+## ⚡ 节省 Token，但不缩水翻译
+
+完整译文的输出 Token 是必要成本，**不应该靠删正文、跳附录或自动放行覆盖率来省**。真正的优化是让 Agent 每次只处理一节的原文，并将 PDF 提取数据、几百行 coverage ledger、XeLaTeX 全量日志保存在本地文件里。
+
+```bash
+# 已按实际论文修改 assets/coverage-map.json 后
+make seed-coverage          # 为所有源文本块生成候选映射（全为 todo）
+make packets                # 在 work/context-packets/ 生成分章节阅读包
+# Agent 只读 index.md 和当前章节对应的 .md，以及必要的原 PDF 渲染页
+
+make                        # 编译成功只显示摘要，完整日志在 work/latexmk-console.log
+make release                # 最终仍必须完整覆盖、跳转检查和视觉复核
+```
+
+较长的工程可用 `prepare_section_packets.py --pending-only --target sections/01-introduction.tex` 续做未核对的部分。工具绝不自动确认 coverage；遇到提取失败的数学符号仍要对照原始 PDF 页面。具体策略见 [Token 优化指南](references/TOKEN_EFFICIENCY.md)。API 的前缀缓存、模型分级由实际调用平台决定，**仓库不承诺未经实测的节省比例**。
 
 ## 快速开始
 

@@ -9,7 +9,7 @@ FINAL_PDF := $(BUILD_DIR)/paper-final.pdf
 REF_START_PAGE ?=
 REF_END_PAGE ?=
 
-.PHONY: all prepare assets base pdf qa release render source-blocks seed-coverage clean distclean
+.PHONY: all prepare assets base pdf qa release render source-blocks seed-coverage packets clean distclean
 
 # Default build ALWAYS checks references, links, logs and LaTeX semantics.
 all: qa
@@ -23,7 +23,8 @@ assets:
 	@python3 scripts/extract_vector_regions.py assets/regions.json --preview-dir work/asset-previews
 
 base: prepare assets
-	@latexmk -xelatex -outdir=$(BUILD_DIR) $(MAIN)
+	@python3 scripts/check_latex_project.py $(MAIN) --mode $(BIB_MODE)
+	@python3 scripts/run_latexmk.py --main $(MAIN) --build-dir $(BUILD_DIR)
 
 pdf: base
 	@set -e; if [ "$(BIB_MODE)" = "pdf" ]; then \
@@ -37,7 +38,6 @@ pdf: base
 	fi
 
 qa: pdf
-	@python3 scripts/check_latex_project.py $(MAIN) --mode $(BIB_MODE)
 	@python3 scripts/check_latex_log.py $(BUILD_DIR)/main.log
 	@python3 scripts/audit_pdf.py $(FINAL_PDF) --mode $(BIB_MODE) --strict $(if $(REF_START_PAGE),--ref-start-page $(REF_START_PAGE))
 	@echo 'Automated checks passed. Visual inspection + source comparison are STILL required.'
@@ -53,6 +53,11 @@ seed-coverage: source-blocks
 	@python3 scripts/seed_coverage.py work/source-blocks.tsv \
 	    --headings assets/coverage-map.json --regions assets/regions.json \
 	    --project-root . --output work/coverage.tsv
+
+# Compact per-section context routing (does not certify coverage or make a model call).
+packets:
+	@python3 scripts/prepare_section_packets.py --source-blocks work/source-blocks.tsv \
+	    --ledger work/coverage.tsv --headings assets/coverage-map.json
 
 # Release gate: you must populate work/source-blocks.tsv and coverage.tsv.
 # A completed ledger does not prove the Chinese translation is accurate.

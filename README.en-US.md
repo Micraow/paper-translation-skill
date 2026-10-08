@@ -34,6 +34,7 @@ A paper is **not just text**. Its meaning lives in formulas, figure axes, exact 
 | | What the skill actually does |
 |:--|:--|
 | 🧭 **No silent omissions** | Proposes source-to-target coverage maps from chapter headings and vector-crop geometry; requires real source-to-translation review before sign-off. |
+| ⚡ **Less wasted context** | Creates compact source packets per section, keeps full TeX logs on disk, and preserves source-ID accounting and strict final QA. |
 | 🧪 **Scientific meaning first** | Preserves hedging, causal relations, units, percentiles, equations, experimental data and every paper section. |
 | ✒️ **Real typesetting** | Searchable Chinese prose and native LaTeX equations instead of page screenshots pasted into a PDF. |
 | 🧬 **Vector-first figures** | Extracts original raster objects or crops original **PDF vectors** with axes, labels and annotations intact. |
@@ -79,6 +80,21 @@ flowchart LR
 6. **Validate** with executable checks and a final render → inspect → fix loop.
 
 The full agent playbook lives in [`SKILL.md`](SKILL.md), with detailed guides in [`references/`](references/).
+
+## ⚡ Token-aware, not completeness-compromised
+
+A full scholarly translation has a necessary output-token cost. The savings come from avoiding repeated full-PDF uploads, giant coverage tables, unnecessarily loaded guides, and verbose TeX build transcripts—not from omitting the appendix or scientific qualifiers.
+
+```bash
+# After setting paper-specific headings in assets/coverage-map.json
+make seed-coverage         # build unreviewed suggestions for every source block
+make packets               # work/context-packets/index.md + section-specific .md
+# Agent reads ONE section packet plus the relevant original rendered pages
+make                       # concise summary; complete build log saved on disk
+make release               # full strict coverage, links, rendering verification
+```
+
+Resume with `scripts/prepare_section_packets.py --pending-only --target sections/01-introduction.tex` when a part has already been verified. The script never marks coverage completed. Source-rendered equations, tables, charts, and column transitions remain authoritative. See [the token-efficiency guide](references/TOKEN_EFFICIENCY.md). Any prefix-cache benefit depends on the actual model/API harness and must be measured rather than assumed.
 
 ## Quick start
 

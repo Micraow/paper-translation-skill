@@ -34,6 +34,7 @@ paper-translation-skill/references/LATEX_CROSSREFERENCES.md
 paper-translation-skill/references/PRECISION_TRANSLATION_POLICY.md
 paper-translation-skill/references/QA_CHECKLIST.md
 paper-translation-skill/references/REFERENCES_AND_LINKS.md
+paper-translation-skill/references/TOKEN_EFFICIENCY.md
 paper-translation-skill/references/TRANSLATION_GUIDE.md
 paper-translation-skill/references/WORKFLOW.md
 paper-translation-skill/requirements.txt
@@ -48,9 +49,12 @@ paper-translation-skill/scripts/extract_text_blocks.py
 paper-translation-skill/scripts/extract_vector_regions.py
 paper-translation-skill/scripts/init_project.py
 paper-translation-skill/scripts/inspect_pdf_assets.py
+paper-translation-skill/scripts/prepare_section_packets.py
 paper-translation-skill/scripts/render_pdf.py
+paper-translation-skill/scripts/run_latexmk.py
 paper-translation-skill/scripts/seed_coverage.py
 paper-translation-skill/scripts/validate_coverage.py
 paper-translation-skill/tests/test_core.py
 paper-translation-skill/tests/test_feedback_regressions.py
+paper-translation-skill/tests/test_token_efficiency.py
 paper-translation-skill/tests/typography_smoke.py

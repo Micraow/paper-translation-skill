@@ -18,6 +18,7 @@ cp assets/coverage-map.example.json assets/coverage-map.json
 # Open the original PDF page renders first; replace ALL demo heading regexes,
 # target files and column_split_x with this paper's REAL structure.
 make seed-coverage         # extracts blocks and proposes chapter/asset mappings
+make packets               # per-section source packets; never certifies translation
 ```
 
 **Every generated row remains `todo`**, even with suggested targets. The mapping requires each original section heading to match *exactly once*; failed matching blocks the command rather than silently assigning later sections to the wrong chapter. After comparing the source renders to each translated section, confirm the reviewed group:
@@ -27,6 +28,10 @@ python3 scripts/confirm_coverage.py work/coverage.tsv --status translated \
   --target sections/01-introduction.tex \
   --review-note 'Compared every block on source pages 2-3 with translated prose'
 ```
+
+Instead of copying hundreds of extracted blocks into an Agent prompt, open only the required `work/context-packets/*.md`. `work/context-packets/index.json` accounts for every source ID; `index.md` is the smaller human-readable index. The original PDF images are still authoritative for formulas, plots and cross-column transitions. Re-enter after a break with `python3 scripts/prepare_section_packets.py --pending-only --target sections/01-introduction.tex --out-dir work/pending-packets`.
+
+`make` intentionally emits a **short** build summary and writes complete XeLaTeX output to `work/latexmk-console.log`; open relevant log excerpts only if something fails. Set `--verbose` on `scripts/run_latexmk.py` if full stdout is needed.
 
 `make release` stays strict until all meaningful blocks have genuinely been reviewed. See `references/COVERAGE_LEDGER.md` in the skill root. The extracted TSV is a **navigation aid**, not authoritative scientific text; some mathematical fonts map to replacement glyphs.
 
@@ -65,6 +70,7 @@ Don't mix native `\cite` with PDF-preserved references: they are different backe
 | `make render` | render all PDF pages and a contact sheet |
 | `make source-blocks` | Index the source PDF into a stable block TSV, if source file exists |
 | `make seed-coverage` | Propose headings/geometry-based source block mappings (all `todo`) |
+| `make packets` | Prepare bounded, source-ID-accounted per-section packets for low-token Agent execution |
 | `make release` | additionally validate coverage ledger against extracted source text blocks; render previews |
 | `make distclean` | remove generated build outputs; keep sources and translation |
 

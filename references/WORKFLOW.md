@@ -1,6 +1,6 @@
 # End-to-End Workflow
 
-This document expands the operational sequence in `SKILL.md`.
+This document expands the operational sequence in `SKILL.md`. For token-aware execution, use [TOKEN_EFFICIENCY.md](TOKEN_EFFICIENCY.md); process one section packet at a time and keep verbose build logs out of the model context.
 
 ## Phase A — Source reconnaissance
 
@@ -81,7 +81,7 @@ A good sequence is:
 9. conclusion;
 10. acknowledgements and appendices.
 
-For each section:
+For each section, read only its `work/context-packets/*.md` packet plus required source-page renderings; do not repeatedly reload the complete paper. The packet is a navigation aid and does not replace source visual checks.
 
 1. translate all prose;
 2. re-typeset equations;
