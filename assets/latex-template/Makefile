@@ -9,7 +9,7 @@ FINAL_PDF := $(BUILD_DIR)/paper-final.pdf
 REF_START_PAGE ?=
 REF_END_PAGE ?=
 
-.PHONY: all prepare assets base pdf qa release render clean distclean
+.PHONY: all prepare assets base pdf qa release render source-blocks seed-coverage clean distclean
 
 # Default build ALWAYS checks references, links, logs and LaTeX semantics.
 all: qa
@@ -41,6 +41,18 @@ qa: pdf
 	@python3 scripts/check_latex_log.py $(BUILD_DIR)/main.log
 	@python3 scripts/audit_pdf.py $(FINAL_PDF) --mode $(BIB_MODE) --strict $(if $(REF_START_PAGE),--ref-start-page $(REF_START_PAGE))
 	@echo 'Automated checks passed. Visual inspection + source comparison are STILL required.'
+
+# Draft coverage mapping: never marks blocks as reviewed. Prepare
+# assets/coverage-map.json by reading the actual source page headings first.
+source-blocks:
+	@test -f sources/original.pdf || { echo 'Missing sources/original.pdf' >&2; exit 2; }
+	@python3 scripts/extract_text_blocks.py sources/original.pdf --tsv work/source-blocks.tsv
+
+seed-coverage: source-blocks
+	@test -f assets/coverage-map.json || { echo 'First copy/edit assets/coverage-map.example.json to assets/coverage-map.json' >&2; exit 2; }
+	@python3 scripts/seed_coverage.py work/source-blocks.tsv \
+	    --headings assets/coverage-map.json --regions assets/regions.json \
+	    --project-root . --output work/coverage.tsv
 
 # Release gate: you must populate work/source-blocks.tsv and coverage.tsv.
 # A completed ledger does not prove the Chinese translation is accurate.

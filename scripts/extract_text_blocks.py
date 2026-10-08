@@ -8,13 +8,26 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 from pathlib import Path
 
 import fitz
 
 
-def clean_text(text: str) -> str:
-    return " ".join(text.replace("\u00ad", "").split())
+CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def clean_text(text: str, keep_raw: bool = False) -> str:
+    # Some PDF symbol fonts incorrectly map glyphs to C0 controls. Replace
+    # the invalid glyph with U+FFFD instead of joining adjacent text together
+    # and silently pretending the extraction was faithful.
+    text = text.replace("\u00ad", "")
+    if keep_raw:
+        # Preserve even control characters that Python considers whitespace.
+        # This intentionally produces potentially viewer-hostile debugging TSV.
+        return text.replace("\r", " ").replace("\n", " ").replace("\t", " ").strip(" ")
+    text = CONTROL_RE.sub("\ufffd", text)
+    return " ".join(text.split())
 
 
 def main() -> None:
@@ -22,6 +35,8 @@ def main() -> None:
     ap.add_argument("pdf", type=Path)
     ap.add_argument("--tsv", type=Path, required=True)
     ap.add_argument("--coverage", type=Path)
+    ap.add_argument("--keep-raw", action="store_true",
+                    help="keep raw control characters (unsafe for many text viewers)")
     args = ap.parse_args()
 
     doc = fitz.open(args.pdf)
@@ -35,7 +50,7 @@ def main() -> None:
             blocks = page.get_text("blocks")
             for idx, block in enumerate(blocks, start=1):
                 x0, y0, x1, y1, text, *_ = block
-                text = clean_text(text)
+                text = clean_text(text, keep_raw=args.keep_raw)
                 if not text:
                     continue
                 source_id = f"p{pno + 1:03d}-b{idx:03d}"
@@ -61,7 +76,7 @@ def main() -> None:
     doc.close()
     print(f"Wrote text blocks: {args.tsv}")
     if args.coverage:
-        print(f"Seeded coverage ledger: {args.coverage}")
+        print(f"Seeded all-TODO coverage ledger: {args.coverage} (see seed_coverage.py for chapter proposals)")
 
 
 if __name__ == "__main__":

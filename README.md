@@ -33,7 +33,7 @@
 
 | 能力 | 具体做法 |
 |:--|:--|
-| 🧭 **防止漏译** | 提取源 PDF 文本块，建立 coverage ledger，与源文本块列表逐条对应，并人工/Agent 复核。 |
+| 🧭 **防止漏译** | 通过章节标题 + 矢量裁图几何信息自动生成覆盖率**候选映射**；必须逐节核对，不能假装自动完成翻译。 |
 | 🧪 **技术语义优先** | 保留作者措辞的确定性程度、因果方向、数值、单位、百分位数、公式与实验结论。 |
 | ✒️ **真正的译排** | 输出可搜索、可复制的中文正文与 LaTeX 数学公式，而不是整页截图。 |
 | 🧬 **矢量图优先** | 照片提取原始图像对象；统计图与架构图按 PDF 矢量区域直接裁取，完整保留轴线、图例和标注。 |
@@ -114,6 +114,20 @@ make             # 默认 native 参考文献模式，可直接编译演示
 make render      # work/final-render/contact-sheet.png
 ```
 
+### 大论文的覆盖率台账，不再逐行手填
+
+```bash
+cp assets/coverage-map.example.json assets/coverage-map.json
+# 根据源 PDF 渲染页面修改全部章节正则、对应 .tex 文件和双栏分界坐标
+make seed-coverage         # 每个源标题必须恰好匹配一次；自动建议路径，但状态全部为 todo
+# 逐节对照原 PDF 与译文后，再确认已复核的章节：
+python scripts/confirm_coverage.py work/coverage.tsv --status translated \
+  --target sections/01-introduction.tex \
+  --review-note '已逐段核对原文第 2-3 页、双栏交界和译文的完整对应关系'
+```
+
+具体用法见 [大规模覆盖台账指南](references/COVERAGE_LEDGER.md)。这是**辅助核对**，而不是自动宣称译文完整。模板还内置微秒单位安全宏 `\us`、独立算法编号、中文强调宏 `\zhstrong`，对无效 CJK 斜体与缺少字形进行门禁检查。
+
 **注意**：初始模板的引言、公式及参考文献都是**明确标记的演示内容**，不会凭空翻译 `sources/original.pdf`。Agent 需要按原论文完整替换后，才算真正产出译文。
 
 ## 两种参考文献模式
@@ -153,7 +167,7 @@ make            # 编译 + 递归 LaTeX 检查 + 日志审计 + PDF 引用检查
 make release    # 在上面基础上核对源文本覆盖台账，渲染全部页面
 ```
 
-正式运行 `make release` 前，请先用 `extract_text_blocks.py` 生成 `work/source-blocks.tsv`，并完成 `work/coverage.tsv` 的逐条状态与目标文件记录。任何漏项、未完成 TODO、失效链接、无效引文等都会阻止通过。
+正式运行 `make release` 前，请先用 `make seed-coverage` 生成 `work/source-blocks.tsv` 与带**建议字段**的 `work/coverage.tsv`，再**逐段复核**并确认实际对应关系。任何漏项、未完成 TODO、失效链接、无效引文等都会阻止通过。
 
 **自动检查不等于翻译准确。** Agent 还必须查看源文与译文的对应关系，核对多栏交界处的句子、复杂公式，逐一检查图表裁切是否完整，并打开最终 PDF 抽查链接跳转。
 
@@ -162,8 +176,8 @@ make release    # 在上面基础上核对源文本覆盖台账，渲染全部�
 ```text
 paper-translation-skill/
 ├── SKILL.md                  # 供 Agent 阅读的核心规范
-├── README.md                 # 英文项目主页
-├── README.zh-CN.md           # 本文
+├── README.md                 # 中文项目主页
+├── README.en-US.md           # English documentation
 ├── LICENSE                   # MIT
 ├── THIRD_PARTY_NOTICES.md    # 原论文/截图/字体/依赖版权说明
 ├── agents/openai.yaml

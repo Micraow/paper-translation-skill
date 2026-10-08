@@ -38,3 +38,16 @@ python scripts/audit_pdf.py build/paper-final.pdf --mode pdf --strict
 - Verify a citation from the beginning, middle and end of the paper by opening and clicking the final PDF. Static/link-count checks cannot prove all links are semantically correct.
 
 A URL/DOI hyperlink (external website) is not equivalent to a local citation-to-bibliography GoTo.
+
+## Named destinations versus duplicate-destination warnings
+
+A single named destination may be referenced by many links; repeated link *uses* are normal. What is suspicious is an `xdvipdfmx` warning such as `Object @equation.1 already defined` from **multiple definitions** of the same destination (often unnecessary `\tag` commands). If source numbers already match the automatic equation counter, remove `\tag` first. You can inspect the final name tree without qpdf/mutool:
+
+```python
+import pymupdf
+with pymupdf.open('build/paper-final.pdf') as pdf:
+    for name, data in pdf.resolve_names().items():
+        print(name, data)
+```
+
+A final PDF name tree alone cannot reveal all overwritten duplicates: inspect the `xdvipdfmx` build output too. Then click a sample of each equation/citation link; a no-error name tree is not sufficient proof of correct targets.

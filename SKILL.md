@@ -16,7 +16,7 @@ Unless the user explicitly requests exceptions:
 1. Translate **everything** that is prose: paper title, abstract, main text, section headings, footnotes, acknowledgements, captions, table headers, appendix text, limitations, and notes. Maintain the author's structure, order and strength of claims.
 2. Keep **algorithms, pseudocode and source code in the source language**, in the original layout when feasible. Never “fix” code as part of translation.
 3. Preserve all figures, tables, measurements, units, graph scales, error bars, equations and original numbering. Never silently invent or normalize numbers.
-4. **Retype equations** in semantic LaTeX. If numbering differs from automatic order, use `\tag{n}` and `\label{eq:...}` so `\eqref` still works. Verify every symbol visually against the source.
+4. **Retype equations** in semantic LaTeX with `\label{eq:...}` and `\eqref`. Keep **automatic equation numbers whenever they already match** the source; use `\tag{n}` only for a genuine mismatch, checking for duplicate PDF destination warnings. Verify every symbol visually against the source.
 5. Prefer **native image extraction or vector-preserving PDF crops** to screenshots. Keep plot-internal annotations in their original language unless the user wants redrawing; translate captions and surrounding discussion.
 6. Maintain **clickable in-text references** to bibliography, figures, tables, sections and equations. Native LaTeX citation/ref machinery is the first choice. Where original bibliography pages must be preserved, the included postprocessor reconstructs numeric links.
 7. Track all meaningful source text blocks in a **coverage ledger**. A green ledger is required but **not sufficient**: compare translated prose back to the rendered original to catch column-order errors, missing math in paragraphs, and false translations.
@@ -42,7 +42,9 @@ Always keep the source PDF unchanged, ideally record its SHA-256. The project is
 python3 scripts/inspect_pdf_assets.py sources/original.pdf
 python3 scripts/render_pdf.py sources/original.pdf work/source-render --contact-sheet
 python3 scripts/extract_text_blocks.py sources/original.pdf \
-  --tsv work/source-blocks.tsv --coverage work/coverage.tsv
+  --tsv work/source-blocks.tsv
+# Create a paper-specific assets/coverage-map.json using rendered source headings.
+cp assets/coverage-map.example.json assets/coverage-map.json
 ```
 
 Read the **rendered pages** in reading order, not blindly the `get_text()` order. For multi-column layouts, follow each column to its actual end; handle spanning figures and mid-paragraph page transitions. Inventory title metadata, every section, footnote, numbered equation, figure/subfigure, table, algorithm, inline formula, bibliography entry, appendix, and graphical label. Record numbered-asset counts and locations; consider a table in `work/inventory.md` and terminology decisions in `work/glossary.tsv`.
@@ -53,11 +55,27 @@ See `references/WORKFLOW.md`.
 
 ### Phase 2 · Translate all content, maintain traceability
 
-Process the paper *section by section*. Check each source paragraph against its rendering, translate it without omission, write it into the corresponding `sections/*.tex`, then mark coverage rows:
+**First seed candidate coverage mappings:** edit `assets/coverage-map.json` to list **all** source headings, ordered and regex-anchored; set the two-column boundary in PDF points. Populate `assets/regions.json` after planning vector crops. Then run:
+
+```bash
+python3 scripts/seed_coverage.py work/source-blocks.tsv \
+  --headings assets/coverage-map.json --regions assets/regions.json \
+  --project-root . --output work/coverage.tsv
+```
+
+The seeder **requires every source heading to match exactly once in order** and leaves all statuses `todo`. Its target/status suggestions are not evidence of translation. Process the paper *section by section*: compare each source paragraph with the rendered original, translate into the corresponding `sections/*.tex`, and mark the reviewed rows. To confirm a reviewed section in one operation:
+
+```bash
+python3 scripts/confirm_coverage.py work/coverage.tsv --status translated \
+  --target sections/01-introduction.tex \
+  --review-note 'Compared every source block on pages 2-3 with the translated section'
+```
+
+Always inspect the suggested rows before signing off; never confirm large unreviewed groups. Read `references/COVERAGE_LEDGER.md` for geometry/heading mapping, preserved assets, font-garbled text, and page-level review commands. Coverage statuses are:
 
 - `translated` — Chinese translation exists; `target_file` points to the relevant real file.
 - `preserved` — deliberate verbatim preservation (algorithm/bibliography; record target asset).
-- `nonprose` — graph art, duplicated running head, equation-only block, etc.
+- `nonprose` — verified repeated page furniture/decorative blocks only; leave `target_file` empty. Equations are not automatically disposable!
 - `skip-with-reason` — a genuine duplicate/artifact with a specific reason in `notes`.
 - `todo` — never allowed for final delivery.
 
@@ -100,10 +118,12 @@ Check every crop, especially first/last tick, vertical labels, legends, arrowhea
 
 - Store source-order chapters in `sections/` and keep original headings/numbering.
 - Figures: vector PDF `\includegraphics`, native translated `\caption`, and `\label{fig:...}` immediately after caption. Refer with `\ref`.
-- Equations: mathematical content in `equation`/`align` with original numbers (`\tag` where needed), `\label`, `\eqref`.
+- Equations: `equation`/`align`, original numbering by default, `\tag` **only if auto-numbering differs**, `\label`, `\eqref`. Avoid duplicate `equation.n` PDF anchors.
 - Tables: exact values, units, headers, notes; `\caption`, `\label` and `\ref`.
 - Sections: `\label{sec:...}` and `\ref`, avoid hard-coding numbers that may move.
-- Algorithms: include original code unchanged; optionally provide *separate* translated explanation in body prose, never modify code.
+- Algorithms: include original code unchanged, **with an independent algorithm counter** (not `figure`, and not `\caption*` + `\label`). Bundled template provides the `algorithm` float and `\numberedpreservedalgorithm[width]{file}{label}` for crops including their original numbered heading; `\translatedalgorithm[width]{body.pdf}{translated caption}{label}` for body-only crops. Refer with `算法~\ref{alg:...}`. Local/custom user templates can declare `\newfloat{algorithm}{htbp}{loa}` in the project preamble rather than modifying a user-owned global `.sty`.
+- Units: use `\qty{5.4}{\micro\second}` or the template's `\us` macro. **Never** use `\mathrm{\mu}` for microseconds under `unicode-math` (can request U+1D707 from Latin text font and produce a missing glyph).
+- Typography: Chinese `\emph{...}` may silently lose emphasis because many CJK fonts lack italics. The default LaTeX project gate **rejects** literal CJK `\emph`; the log gate also rejects missing italic/small-caps font faces. Use `\zhstrong{...}` / `\textbf{...}` and check the render. An expert can explicitly opt out only after verifying a real CJK italic face. Latin small caps are enabled by the bundled Latin Modern Caps OpenType face.
 - Links: `hyperref` loads in the bundled template. Never duplicate-load it if integrating another style; keep the style compatible.
 
 See `references/LATEX_CROSSREFERENCES.md`. Run `scripts/check_latex_project.py` early: it **recursively follows `\input` and `\include`**, catches unresolved labels, missing citation keys and suspicious hard-coded numeric citations in native mode.
@@ -146,6 +166,12 @@ Provide (1) finished full translation PDF; (2) editable XeLaTeX project with tra
 - Citation links replicate across unrelated pages → shared `/Annots` reference from an earlier PDF transform; link-restoration script privatizes those arrays before insertion.
 - Script cannot identify references → specify final-PDF bibliography page range; do not guess.
 - Fonts differ between machines → pin approved fonts in document/local style, note installed-font dependencies; never distribute font binaries.
+- `Missing character ... U+1D707` with `\mathrm{\mu}` → use `\qty{...}{\micro\second}`, `\si{\micro\second}` or `\us`; never change the scientific quantity.
+- `\caption*` then undefined `\ref` for algorithm → a star caption does not advance a counter. Use `algorithm` float with `\caption`/`\label`, or `\numberedpreservedalgorithm` for a full original crop.
+- `xdvipdfmx ... Object @equation.1 already defined` → check unnecessary `\tag`, maintain unique link destination names; inspect `pymupdf.Document.resolve_names()` and click representative equation links.
+- CJK `\emph`/Latin `\textsc` font-shape warnings → restore visible emphasis or use Latin Modern Caps; do not dismiss them as harmless cosmetic logs.
+- Hundreds of `todo` coverage rows → run `seed_coverage.py` with crop geometry plus a complete source heading map; every heading must be consumed exactly once, then review and confirm by section.
+- `pdftex.map` / `kanjix.map` warning from xdvipdfmx → usually incomplete optional TeX font-map configuration; if output fonts and glyphs are correct it is an environment warning, not a reason to rewrite the paper.
 - Formula or cropped graphic looks wrong → return to the rendered source, correct source/clip, render again; don't improvise scientific content.
 - Incomplete ledger or unresolved references → **stop**, do not claim a finished full translation.
 

@@ -33,7 +33,7 @@ A paper is **not just text**. Its meaning lives in formulas, figure axes, exact 
 
 | | What the skill actually does |
 |:--|:--|
-| 🧭 **No silent omissions** | Tracks text blocks using a source-coverage ledger, then requires human/agent source-to-translation review. |
+| 🧭 **No silent omissions** | Proposes source-to-target coverage maps from chapter headings and vector-crop geometry; requires real source-to-translation review before sign-off. |
 | 🧪 **Scientific meaning first** | Preserves hedging, causal relations, units, percentiles, equations, experimental data and every paper section. |
 | ✒️ **Real typesetting** | Searchable Chinese prose and native LaTeX equations instead of page screenshots pasted into a PDF. |
 | 🧬 **Vector-first figures** | Extracts original raster objects or crops original **PDF vectors** with axes, labels and annotations intact. |
@@ -112,6 +112,20 @@ make                     # builds the generic demo with native citation links
 make render              # creates work/final-render/contact-sheet.png
 ```
 
+### Coverage maps for long two-column papers
+
+```bash
+cp assets/coverage-map.example.json assets/coverage-map.json
+# First read the rendered original; edit ALL heading patterns, paths, and column_split_x.
+make seed-coverage          # suggestions only: every status remains todo
+# After reviewing the full source section against its translation:
+python scripts/confirm_coverage.py work/coverage.tsv --status translated \
+  --target sections/01-introduction.tex \
+  --review-note 'Compared all source blocks and column boundaries on pages 2-3'
+```
+
+Every expected source heading must be matched *exactly once* or the seeder fails, avoiding silently misassigned sections. See [the practical coverage ledger guide](references/COVERAGE_LEDGER.md). The template now includes safe `\us` units, Chinese `\zhstrong`, Latin small caps and a separate algorithm float with working references. Glyph substitution and CJK italic fallback block the default QA gate.
+
 **Important:** The initial template contains clearly marked **dummy text and one dummy bibliography item**. Compiling it only tests your environment; it does **not** translate the original paper. The agent replaces all sample content, then rebuilds and reviews.
 
 ## Two bibliography strategies
@@ -153,7 +167,7 @@ make                     # build + cite/label + TeX log + PDF-link QA
 make release             # also checks complete coverage vs extracted source blocks
 ```
 
-Before `make release`, run `scripts/extract_text_blocks.py` to populate `work/source-blocks.tsv`, then fill `work/coverage.tsv` with translations and target paths. The release target fails for missing blocks, unfinished `todo` entries, nonexistent translation targets, missing links, or compile errors.
+Before `make release`, run `make seed-coverage` to draft chapter/asset suggestions, then **visually review** each section and confirm the exact source-to-target mappings. The release target fails for missing blocks, unfinished `todo` entries, nonexistent translation targets, missing links, or compile errors.
 
 **Automation cannot certify semantic accuracy.** Open the contact sheet and inspect every figure/algorithm/table page, equations, all footnotes, the bibliography and appendix, and compare the Chinese text against the original PDF—especially two-column boundaries.
 
@@ -163,8 +177,8 @@ Before `make release`, run `scripts/extract_text_blocks.py` to populate `work/so
 ```text
 paper-translation-skill/
 ├── SKILL.md                  # Agent-facing instruction manual
-├── README.md                 # GitHub landing page
-├── README.zh-CN.md           # Chinese documentation
+├── README.md                 # Chinese landing page
+├── README.en-US.md           # English documentation
 ├── LICENSE                   # MIT license (own source only)
 ├── THIRD_PARTY_NOTICES.md    # Paper, previews, fonts, dependency rights
 ├── agents/openai.yaml        # Agent skill metadata
@@ -173,6 +187,8 @@ paper-translation-skill/
 │   ├── init_project.py
 │   ├── inspect_pdf_assets.py
 │   ├── extract_text_blocks.py
+│   ├── seed_coverage.py
+│   ├── confirm_coverage.py
 │   ├── validate_coverage.py
 │   ├── extract_embedded_images.py
 │   ├── extract_vector_regions.py

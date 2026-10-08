@@ -52,6 +52,8 @@ def validate(ledger: Path, blocks: Path | None = None, require_nonempty: bool = 
             errors.append(f"row {i}: still TODO")
         if status == "skip-with-reason" and not r.get("notes", "").strip():
             errors.append(f"row {i}: skipped text requires a reason")
+        if require_targets and status == "nonprose" and r.get("target_file", "").strip():
+            errors.append(f"row {i}: nonprose must have an empty target_file (use preserved for actual assets)")
         if require_targets and status in ("translated", "preserved"):
             dest = r.get("target_file", "").strip()
             if not dest:

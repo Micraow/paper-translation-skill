@@ -1,7 +1,7 @@
 % paper-translation.sty -- generic Chinese academic-paper translation style
 % Engine: XeLaTeX
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{paper-translation}[2026/10/08 v2.0 Academic Paper Translation]
+\ProvidesPackage{paper-translation}[2026/10/08 v2.1 Academic Paper Translation]
 
 \RequirePackage{iftex}
 \ifXeTeX\else
@@ -74,7 +74,8 @@
   \setmainfont{lmroman10-regular.otf}[
     BoldFont=lmroman10-bold.otf,
     ItalicFont=lmroman10-italic.otf,
-    BoldItalicFont=lmroman10-bolditalic.otf
+    BoldItalicFont=lmroman10-bolditalic.otf,
+    SmallCapsFont=lmromancaps10-regular.otf
   ]%
 }{%
   \PackageError{paper-translation}{Latin Modern Roman OTF files not found}%
@@ -161,6 +162,14 @@
 \definecolor{PaperLink}{HTML}{8A3049}
 \definecolor{PaperURL}{HTML}{2E6C96}
 
+% ---------- Safe emphasis and units ----------
+% Most CJK serif families have no italic face. Never silently rely on \emph
+% for Chinese emphasis; use explicit bold emphasis instead.
+\newcommand{\zhstrong}[1]{\textbf{#1}}
+% Units must be upright and semantically separate from mathematical variables.
+% Use \qty{5.4}{\micro\second} for quantities or 5.4\,\us in math.
+\newcommand{\us}{\si{\micro\second}}
+
 % ---------- Headings ----------
 \setkomafont{section}{\sffamily\bfseries\fontsize{18.5pt}{23pt}\selectfont\color{PaperHeading}}
 \setkomafont{subsection}{\sffamily\bfseries\fontsize{14pt}{18pt}\selectfont\color{PaperHeading}}
@@ -220,6 +229,17 @@
 }
 \renewcommand{\figurename}{图}
 \renewcommand{\tablename}{表}
+% Algorithms are NOT figures: give them an independent counter and hyperlink
+% anchors. Use a normal \caption/\label if the crop excludes its heading.
+\newfloat{algorithm}{htbp}{loa}
+\floatname{algorithm}{算法}
+\captionsetup[algorithm]{
+  font=small,
+  labelfont={bf,sf,color=PaperHeading},
+  textfont={color=PaperMuted},
+  labelsep=quad,
+  skip=6pt
+}
 \floatplacement{figure}{htbp}
 \floatplacement{table}{htbp}
 
@@ -229,6 +249,27 @@
     \includegraphics[width=#1\linewidth]{#2}
     \caption{#3}\label{#4}
   \end{figure}%
+}
+
+% When the crop contains its original heading (e.g. "Algorithm 1"), do not
+% duplicate it with a second caption. Step the *algorithm* counter explicitly
+% so \ref{alg:...} works, and check the crop's printed number matches it.
+\newcommand{\numberedpreservedalgorithm}[3][.95]{%
+  \begin{algorithm}[htbp]
+    \centering
+    \refstepcounter{algorithm}\label{#3}%
+    \includegraphics[width=#1\linewidth]{#2}
+  \end{algorithm}%
+}
+
+% When only the algorithm body is cropped, use native caption + independent
+% algorithm counter. Caption is translated; pseudocode/image stays unchanged.
+\newcommand{\translatedalgorithm}[4][.95]{%
+  \begin{algorithm}[htbp]
+    \centering
+    \includegraphics[width=#1\linewidth]{#2}
+    \caption{#3}\label{#4}
+  \end{algorithm}%
 }
 
 \newcommand{\preservedalgorithm}[2][.95]{%

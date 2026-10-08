@@ -28,13 +28,14 @@ Academic PDFs often use two columns, floating figures, footnotes, and text boxes
 
 ## Phase B — Coverage mapping
 
-Run `extract_text_blocks.py` to seed a TSV. Then review every row against the rendered page and classify it.
+Run `extract_text_blocks.py` to index the source into a TSV. **Do not hand-map hundreds of PDF blocks one at a time.** Use `seed_coverage.py` with a visually verified source-heading map (`assets/coverage-map.json`) and the `regions.json` crop manifest. For two-column papers provide `column_split_x` and list every source section heading in order. The seeder **refuses** to write a ledger if any heading is missed, duplicated, or out of order. It fills `suggested_status` / `suggested_target` but leaves all entries `todo`; only a reviewed source-to-translation comparison can finalize them. Use `confirm_coverage.py` to accept a *reviewed* section as one group, with a review note and actual target. See [COVERAGE_LEDGER.md](COVERAGE_LEDGER.md) for commands and safeguards.
 
 Recommended source IDs stay stable throughout the project:
 
 - `p002-b004` — page 2, extracted block 4;
 - for manually split blocks, append `.a`, `.b`;
 - for a merged paragraph spanning blocks, list both IDs in the notes.
+- text extracted with replacement glyphs or wrong math symbols is only a location hint; translate from the rendered page, not the TSV.
 
 The coverage ledger is not a translation memory. It is a **completeness proof aid**.
 
@@ -136,16 +137,22 @@ Follow the paper. If the source uses numbered sections, use numbered LaTeX secti
 
 ### Equations
 
-Use native LaTeX math. If automatic numbering cannot match the source, set explicit tags:
+Use native LaTeX math. **First try automatic equation numbering** with `\label` and `\eqref`; if it already matches the source, do not add `\tag`. When numbers start at an offset, `\setcounter{equation}{<previous>}` is generally safer than individually tagging every equation. Only if an individual original equation number cannot otherwise be preserved, use an explicit tag:
 
 ```tex
 \begin{equation}
   q(k)=RTT(k)-RTT_{\min}.
-  \tag{2}
+  \tag{2}\label{eq:queue}
 \end{equation}
 ```
 
-Never renumber equations silently.
+Never renumber equations silently. `\tag` combined with `hyperref` can produce duplicate named-destination warnings such as `Object @equation.1 already defined`; remove unnecessary tags first, then audit final PDF destinations using `pymupdf.open(...).resolve_names()` and manually sample the clickable links.
+
+### Algorithm floats and text styles
+
+Use the bundled `algorithm` float rather than `figure` when an original Algorithm has a number or a cross-reference. If the crop includes the original "Algorithm n" heading, use `\numberedpreservedalgorithm{figures/alg.pdf}{alg:...}`. If the crop contains only code, use `\translatedalgorithm{figures/alg-body.pdf}{中文标题}{alg:...}`. `\caption*` does not create a reference anchor. Never duplicate the source's visible algorithm heading with a new caption.
+
+Use `\qty{5.4}{\micro\second}` / `5.4\,\us` rather than `\mathrm{\mu s}`: `unicode-math` can yield a missing U+1D707 glyph. For Chinese emphasis, use `\zhstrong{文字}` instead of relying on italic `\emph{中文}` with a non-italic CJK font. Latin small caps work with the included Latin Modern Caps face.
 
 ## Phase G — Bibliography strategy
 

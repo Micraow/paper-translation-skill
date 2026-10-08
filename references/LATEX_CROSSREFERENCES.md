@@ -30,12 +30,22 @@
 ```tex
 \begin{equation}
   r(k+1)=r(k)+u(k).
-  \tag{8}\label{eq:rate}
+  \label{eq:rate}  % prefer automatic equation numbering when it matches source
 \end{equation}
 根据式~\eqref{eq:rate} ……
 ```
 
-**Don't duplicate the source's equation number as literal prose** in place of a functioning semantic reference. Confirm `\tag` matches the source and a different equation does not accidentally reuse the same tag.
+**Prefer automatic numbering.** If the source calls this equation (8), make sure it really is (8) in the output; if not, adjust the starting counter for contiguous equations or use `\tag{8}\label{eq:rate}` as a *last resort* for irregular numbering. Explicit `\tag` can generate duplicate `xdvipdfmx: Object @equation.1 already defined` warnings with `hyperref` even when `\eqref` still works. Do not duplicate printed numeric text as a substitute for `\eqref`; audit the PDF named-destination tree and click representative links.
+
+## Algorithms are not figures
+
+The bundled template provides the `algorithm` float and a real counter/anchor. For original crops containing "Algorithm n", use `\numberedpreservedalgorithm{figures/alg.pdf}{alg:main}`. For cropped *body only*, use `\translatedalgorithm{figures/alg-body.pdf}{算法说明}{alg:main}`. Then `算法~\ref{alg:main}` is clickable. Never put `\label` after a `\caption*` and expect it to create a counter.
+
+## Units and semantic emphasis
+
+- `\qty{5.4}{\micro\second}` or `5.4\,\us` (the template's safe unit macro) rather than `\mathrm{\mu s}`; `unicode-math` may redirect `\mu` to U+1D707 in the text font.
+- `\zhstrong{关键结论}` for visibly emphasized Chinese. The bundled source linter blocks `\emph{中文}` by default, and the log linter also blocks fallback italic/small-caps font substitutions. `\emph{中文}` often silently falls back to upright type because there is no CJK italic face.
+- `\textsc{HPCC}` works in the bundled style with `lmromancaps10-regular.otf`; in third-party templates confirm a real small-caps face exists rather than trusting a font substitution warning.
 
 ## Chapters and appendices
 

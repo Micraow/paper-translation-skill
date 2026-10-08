@@ -39,7 +39,7 @@ jobs:
             texlive-science texlive-fonts-recommended fonts-lmodern fonts-noto-cjk
       - name: Check Latin Modern OpenType availability
         run: |
-          for font in lmroman10-regular.otf lmsans10-regular.otf lmmonolt10-regular.otf; do
+          for font in lmroman10-regular.otf lmromancaps10-regular.otf lmsans10-regular.otf lmmonolt10-regular.otf; do
             if ! kpsewhich "$font" | grep -q .; then
               echo "::error::Missing $font. Install fonts-lmodern / lmodern."
               exit 1
@@ -53,3 +53,5 @@ jobs:
         run: |
           python /tmp/paper-translation-smoke/scripts/audit_pdf.py \
             /tmp/paper-translation-smoke/build/paper-final.pdf --mode native --strict
+      - name: Verify scientific typography and algorithm anchors
+        run: python tests/typography_smoke.py /tmp/paper-translation-smoke

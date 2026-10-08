@@ -41,7 +41,8 @@ PyMuPDF uses a top-left origin for page coordinates in these scripts, matching t
       "output": "algorithm1.pdf",
       "page": 9,
       "bbox": [52, 68, 296, 360],
-      "label": "Algorithm 1, preserve verbatim"
+      "label": "Algorithm 1, preserve verbatim",
+      "kind": "algorithm"
     }
   ]
 }
@@ -87,6 +88,39 @@ Best fidelity hierarchy:
 3. raster image only when the original is raster.
 
 Do not “improve” variable names, operation counts, line numbers, comments, arrows, or control-flow keywords.
+
+### Numbering and clickable references (copyable recipes)
+
+The generic `paper-translation.sty` already defines an **independent** `algorithm` float/counter. Do **not** wrap algorithms in `figure`: then "Algorithm 1" may become "图 15". Do **not** use `\caption*` followed by `\label`: a starred caption cannot create an incremented reference anchor.
+
+**A. Complete crop includes the ORIGINAL "Algorithm 1" title:**
+
+```tex
+\numberedpreservedalgorithm[.94]{figures/algorithm01.pdf}{alg:sender}
+正文：如算法~\ref{alg:sender} 所示，……
+```
+
+This steps the algorithm counter without duplicating the visible original heading. Check that the source's printed number equals the automatically stepped number. With gaps in the original numbering, set `\setcounter{algorithm}{<previous-original-number>}` before the block and verify the resulting clickable link.
+
+**B. Crop is CODE/BODY ONLY (no printed title):**
+
+```tex
+\translatedalgorithm[.94]{figures/algorithm01-body.pdf}{发送端算法}{alg:sender}
+正文：参见算法~\ref{alg:sender}。
+```
+
+Equivalent manual form:
+
+```tex
+\begin{algorithm}[htbp]
+  \centering
+  \includegraphics[width=.94\linewidth]{figures/algorithm01-body.pdf}
+  \caption{发送端算法}\label{alg:sender}
+\end{algorithm}
+```
+
+If the user supplied their own `.sty`, **do not change that shared template globally**: only if an algorithm environment does not already exist, declare `\newfloat{algorithm}{htbp}{loa}` and `\floatname{algorithm}{算法}` in the *local project preamble* (the `float` package is needed). Do not declare it twice or when another package already owns `algorithm`.
+
 
 ## Common crop defects
 

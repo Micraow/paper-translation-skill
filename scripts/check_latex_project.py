@@ -22,6 +22,24 @@ BIBITEM_RE = re.compile(r"\\bibitem(?:\[[^\]]*\])?\s*\{([^{}]+)\}")
 BIBRESOURCE_RE = re.compile(r"\\(?:addbibresource|bibliography)\s*\{([^{}]+)\}")
 BIB_ENTRY_RE = re.compile(r"@\w+\s*\{\s*([^,\s]+)\s*,", re.I)
 HARDCODE_RE = re.compile(r"(?<![\w\\])\[(?:[1-9]\d*)(?:\s*[,–-]\s*[1-9]\d*)*\]")
+# Only the optional argument-count slot of a definition should be ignored,
+# never the entire line: a genuine citation may follow a definition inline.
+MACRO_ARG_RE = re.compile(
+    r"\\(?:newcommand|renewcommand|providecommand|DeclareRobustCommand|"
+    r"newenvironment|renewenvironment)\*?\s*"
+    r"(?:\{(?:\\[A-Za-z@]+|[^{}]+)\}|\\[A-Za-z@]+)\s*"
+    r"(\[[0-9]\])"
+)
+BAD_MU_RE = re.compile(r"\\mathrm\s*\{\s*\\mu(?:\b|\s|\})")
+CJK_EMPH_RE = re.compile(r"\\emph\s*\{[^}]*[\u3400-\u9fff][^}]*\}")
+
+
+def literal_citations(line: str) -> list[str]:
+    """Find numeric prose citations, excluding LaTeX definition arity only."""
+    arity_spans = [match.span(1) for match in MACRO_ARG_RE.finditer(line)]
+    return [m.group() for m in HARDCODE_RE.finditer(line)
+            if not any(a <= m.start() and m.end() <= b for a, b in arity_spans)]
+
 
 
 def strip_comments(src: str) -> str:
@@ -83,7 +101,8 @@ def collect(main: Path) -> tuple[dict[Path, str], list[str]]:
     return visited, errors
 
 
-def check(main: Path, mode: str, require_citations: bool = False) -> dict:
+def check(main: Path, mode: str, require_citations: bool = False,
+          allow_cjk_emph: bool = False) -> dict:
     files, errors = collect(main)
     warnings: list[str] = []
     full = "\n".join(files.values())
@@ -119,12 +138,25 @@ def check(main: Path, mode: str, require_citations: bool = False) -> dict:
         hardcoded = []
         for path, src in files.items():
             for n, line in enumerate(src.splitlines(), 1):
-                if HARDCODE_RE.search(line) and not line.lstrip().startswith("\\bibitem"):
-                    hardcoded.append(f"{path.name}:{n}")
+                if not line.lstrip().startswith("\\bibitem"):
+                    if literal_citations(line):
+                        hardcoded.append(f"{path.name}:{n}")
         if hardcoded:
             errors.append("possible hard-coded numeric citations in native mode: " + ", ".join(hardcoded[:12]))
     elif cites:
         errors.append("PDF-bibliography mode should use literal numbered citations; remove LaTeX \\cite commands")
+    for path, src in files.items():
+        for n, line in enumerate(src.splitlines(), 1):
+            if BAD_MU_RE.search(line):
+                errors.append(f"{path.name}:{n}: \\mathrm{{\\mu...}} may request an unavailable Unicode math glyph; "
+                              r"typeset units with \qty{5.4}{\micro\second} or \si{\micro\second}")
+            if CJK_EMPH_RE.search(line):
+                message = (f"{path.name}:{n}: \\emph with CJK may lose emphasis (no CJK italic); "
+                           r"prefer \zhstrong{...} or verified CJK emphasis")
+                if allow_cjk_emph:
+                    warnings.append(message)
+                else:
+                    errors.append(message)
     if require_citations and mode == "native" and not cites:
         errors.append("native mode expected at least one \\cite")
     if mode == "native" and not bibkeys:
@@ -142,9 +174,11 @@ def main() -> None:
     ap.add_argument("main", type=Path)
     ap.add_argument("--mode", choices=("native", "pdf"), default="native")
     ap.add_argument("--require-citations", action="store_true")
+    ap.add_argument("--allow-cjk-emph", action="store_true",
+                    help="downgrade CJK emphasis lint to warning after independently verifying italic font")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
-    result = check(args.main.resolve(), args.mode, args.require_citations)
+    result = check(args.main.resolve(), args.mode, args.require_citations, args.allow_cjk_emph)
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:

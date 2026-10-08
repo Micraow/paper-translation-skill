@@ -54,6 +54,8 @@ Preserve:
 - ratios such as `16:1`;
 - source-defined thresholds and constants.
 
+For XeLaTeX with `unicode-math`, treat units as units, **not italic mathematical identifiers**: `\qty{5.4}{\micro\second}` or `\SI{5.4}{\micro\second}` is safe with the bundled `siunitx`; `5.4\,\us` uses the style's microseconds macro. Do **not** use `$5.4\mathrm{\mu s}$`: it can request U+1D707 from Latin Modern Roman (a missing glyph). Apply the same semantic care to `\ohm`, degrees, micro-metres, and similar prefixes: keep their mathematical meaning and unit symbols exact.
+
 ## 5. Mathematical prose
 
 Variables should stay as variables:

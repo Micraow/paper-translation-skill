@@ -1,0 +1,27 @@
+{
+  "reading_order": "two-column",
+  "column_split_x": 300,
+  "default_target": "sections/00-abstract.tex",
+  "headings": [
+    {
+      "match": "^Abstract\\b",
+      "target_file": "sections/00-abstract.tex"
+    },
+    {
+      "match": "^1\\s+Introduction\\b",
+      "target_file": "sections/01-introduction.tex"
+    },
+    {
+      "match": "^References\\b",
+      "target_file": "sections/references.tex",
+      "status": "preserved"
+    }
+  ],
+  "furniture_patterns": [
+    "^USENIX Association\\b",
+    "^\\d+\\s+Proceedings of the\\b"
+  ],
+  "caption_patterns": [
+    "^(?:Figure|Fig\\.|Table|Algorithm)\\s+\\d+\\s*[:.]"
+  ]
+}
