@@ -10,8 +10,8 @@ jobs:
     name: PDF tooling regression tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install Python dependencies
@@ -25,8 +25,8 @@ jobs:
     name: XeLaTeX demonstration smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install Python dependencies
@@ -36,7 +36,15 @@ jobs:
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             latexmk texlive-xetex texlive-latex-extra texlive-lang-chinese \
-            texlive-science texlive-fonts-recommended fonts-noto-cjk
+            texlive-science texlive-fonts-recommended fonts-lmodern fonts-noto-cjk
+      - name: Check Latin Modern OpenType availability
+        run: |
+          for font in lmroman10-regular.otf lmsans10-regular.otf lmmonolt10-regular.otf; do
+            if ! kpsewhich "$font" | grep -q .; then
+              echo "::error::Missing $font. Install fonts-lmodern / lmodern."
+              exit 1
+            fi
+          done
       - name: Initialize an independent project
         run: python scripts/init_project.py /tmp/paper-translation-smoke
       - name: Compile and audit example

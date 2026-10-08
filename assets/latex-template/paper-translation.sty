@@ -65,24 +65,54 @@
 \raggedbottom
 
 % ---------- Fonts ----------
-% The Latin body deliberately prefers Latin Modern Roman. This is an explicit
-% design choice, not an accidental fallback. No font binaries are bundled.
-\IfFontExistsTF{LMRoman10}{
-  \setmainfont{LMRoman10}
-}{
-  \setmainfont{TeX Gyre Termes}
+% Use the Latin Modern OpenType *filenames* rather than platform-dependent
+% fontconfig family names (LMRoman10 / Latin Modern Roman). Some minimal
+% Linux installations ship the OTF files in TeX Live but do not expose
+% matching fontconfig names. Explicit font files also keep the output style
+% stable instead of silently switching to an unrelated fallback family.
+\IfFontExistsTF{lmroman10-regular.otf}{%
+  \setmainfont{lmroman10-regular.otf}[
+    BoldFont=lmroman10-bold.otf,
+    ItalicFont=lmroman10-italic.otf,
+    BoldItalicFont=lmroman10-bolditalic.otf
+  ]%
+}{%
+  \PackageError{paper-translation}{Latin Modern Roman OTF files not found}%
+    {Install the TeX Live Latin Modern fonts (e.g. fonts-lmodern).}%
 }
 
-\IfFontExistsTF{Noto Sans}{
-  \setsansfont{Noto Sans}
-}{
-  \IfFontExistsTF{LMSans10}{\setsansfont{LMSans10}}{\setsansfont{TeX Gyre Heros}}
+\IfFontExistsTF{Noto Sans}{%
+  \setsansfont{Noto Sans}%
+}{%
+  \IfFontExistsTF{lmsans10-regular.otf}{%
+    \setsansfont{lmsans10-regular.otf}[
+      BoldFont=lmsans10-bold.otf,
+      ItalicFont=lmsans10-oblique.otf,
+      BoldItalicFont=lmsans10-boldoblique.otf
+    ]%
+  }{%
+    \PackageError{paper-translation}{Latin Modern Sans OTF files not found}%
+      {Install the TeX Live Latin Modern fonts (e.g. fonts-lmodern).}%
+  }%
 }
 
-\IfFontExistsTF{JetBrains Mono}{
-  \setmonofont{JetBrains Mono}
-}{
-  \IfFontExistsTF{Source Code Pro}{\setmonofont{Source Code Pro}}{\setmonofont{LMMono10}}
+\IfFontExistsTF{JetBrains Mono}{%
+  \setmonofont{JetBrains Mono}%
+}{%
+  \IfFontExistsTF{Source Code Pro}{%
+    \setmonofont{Source Code Pro}%
+  }{%
+    \IfFontExistsTF{lmmonolt10-regular.otf}{%
+      \setmonofont{lmmonolt10-regular.otf}[
+        BoldFont=lmmonolt10-bold.otf,
+        ItalicFont=lmmonolt10-oblique.otf,
+        BoldItalicFont=lmmonolt10-boldoblique.otf
+      ]%
+    }{%
+      \PackageError{paper-translation}{Latin Modern Mono OTF files not found}%
+        {Install the TeX Live Latin Modern fonts (e.g. fonts-lmodern).}%
+    }%
+  }%
 }
 
 \IfFontExistsTF{Source Han Serif CN}{
