@@ -52,6 +52,11 @@ Use this as a hard gate before returning a translated paper.
 
 ## Render inspection
 
+This section **requires visual capability**. No script in this skill can decide whether
+a page is *readable*; automated gates only say a build and its links are structurally
+sound. If the flow was run without a model that can look at images, these boxes must be
+reported as **not performed**, never ticked.
+
 - [ ] Contact sheet inspected.
 - [ ] Cover/title page inspected full-size.
 - [ ] Every figure/table page inspected full-size.

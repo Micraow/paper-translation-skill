@@ -9,6 +9,18 @@ FINAL_PDF := $(BUILD_DIR)/paper-final.pdf
 REF_START_PAGE ?=
 REF_END_PAGE ?=
 
+# The reference backend is a source-level choice, so its generated configuration
+# lives at a fixed path independent of BUILD_DIR. main.tex \input's exactly this
+# path; changing it here without changing main.tex silently selects the wrong
+# bibliography backend.
+CONFIG_TEX := work/translation-config.tex
+
+# Vector crops are re-derived only when the manifest or the source PDF changes,
+# so a plain `make` never rewrites an already reviewed figures/ directory.
+REGION_MANIFEST := assets/regions.json
+REGION_SOURCES := $(REGION_MANIFEST) $(wildcard sources/original.pdf)
+ASSET_STAMP := work/asset-previews/.extracted
+
 .PHONY: all prepare assets base pdf qa release render source-blocks seed-coverage packets clean distclean
 
 # Default build ALWAYS checks references, links, logs and LaTeX semantics.
@@ -17,10 +29,13 @@ all: qa
 prepare:
 	@mkdir -p $(BUILD_DIR) work
 	@case "$(BIB_MODE)" in native|pdf) ;; *) echo 'BIB_MODE must be native or pdf' >&2; exit 2;; esac
-	@printf '\\def\\TranslationReferenceMode{%s}\n' '$(BIB_MODE)' > $(BUILD_DIR)/translation-config.tex
+	@printf '\\def\\TranslationReferenceMode{%s}\n' '$(BIB_MODE)' > $(CONFIG_TEX)
 
-assets:
-	@python3 scripts/extract_vector_regions.py assets/regions.json --preview-dir work/asset-previews
+assets: $(ASSET_STAMP)
+
+$(ASSET_STAMP): $(REGION_SOURCES)
+	@python3 scripts/extract_vector_regions.py $(REGION_MANIFEST) --preview-dir work/asset-previews
+	@mkdir -p $(dir $(ASSET_STAMP)) && touch $@
 
 base: prepare assets
 	@python3 scripts/check_latex_project.py $(MAIN) --mode $(BIB_MODE)
@@ -61,11 +76,24 @@ packets:
 
 # Release gate: you must populate work/source-blocks.tsv and coverage.tsv.
 # A completed ledger does not prove the Chinese translation is accurate.
+# The final block prints exactly which checks ran and which did not, so a green
+# build cannot be described as "fully verified".
 release: qa
 	@python3 scripts/validate_coverage.py work/coverage.tsv \
 	    --source-blocks work/source-blocks.tsv --require-nonempty --require-targets --root .
 	@python3 scripts/render_pdf.py $(FINAL_PDF) work/final-render --contact-sheet
-	@echo 'Review every figure/table/algorithm and the entire page contact sheet before publishing.'
+	@echo ''
+	@echo 'Release gate — checks that RAN automatically:'
+	@echo '  [x] XeLaTeX build + recursive project/reference/citation lint'
+	@echo '  [x] TeX log audit (missing glyph, undefined ref/cite, font-shape substitution)'
+	@echo '  [x] PDF link audit (GoTo + named destinations, strict)'
+	@echo '  [x] Coverage ledger vs extracted source blocks (structural traceability)'
+	@echo '  [x] Full-page render + contact sheet'
+	@echo 'Checks that did NOT run — still required from a human or a visual model:'
+	@echo '  [ ] Semantic source-to-translation comparison (column joins, equations, qualifiers)'
+	@echo '  [ ] Visual framing of every figure/table/algorithm crop'
+	@echo '  [ ] Click-through spot check of citation/equation links in the final PDF'
+	@echo 'Do not report this build as "fully reviewed" on the strength of the [x] lines.'
 
 render: pdf
 	@python3 scripts/render_pdf.py $(FINAL_PDF) work/final-render --contact-sheet
@@ -76,4 +104,4 @@ clean:
 
 distclean:
 	-@latexmk -C -outdir=$(BUILD_DIR) $(MAIN)
-	@rm -rf $(BUILD_DIR) work/asset-previews work/final-render
+	@rm -rf $(BUILD_DIR) work/asset-previews work/final-render $(CONFIG_TEX)

@@ -94,7 +94,7 @@ make                       # concise summary; complete build log saved on disk
 make release               # full strict coverage, links, rendering verification
 ```
 
-Resume with `scripts/prepare_section_packets.py --pending-only --target sections/01-introduction.tex` when a part has already been verified. The script never marks coverage completed. Source-rendered equations, tables, charts, and column transitions remain authoritative. See [the token-efficiency guide](references/TOKEN_EFFICIENCY.md). Any prefix-cache benefit depends on the actual model/API harness and must be measured rather than assumed.
+Resume with `scripts/prepare_section_packets.py --pending-only --target sections/01-introduction.tex` when a part has already been verified. **Do not re-read `work/source-blocks.tsv` whole** — it exceeds 90 KB on a real two-column paper. Look one block up with `python3 scripts/blocks.py query work/source-blocks.tsv --page 7 --grep 'Figure 4'`, or read the compact `blocks.py index` when a whole-document view is genuinely needed. The script never marks coverage completed. Source-rendered equations, tables, charts, and column transitions remain authoritative. See [the token-efficiency guide](references/TOKEN_EFFICIENCY.md). Any prefix-cache benefit depends on the actual model/API harness and must be measured rather than assumed.
 
 ## Quick start
 
@@ -186,6 +186,8 @@ make release             # also checks complete coverage vs extracted source blo
 Before `make release`, run `make seed-coverage` to draft chapter/asset suggestions, then **visually review** each section and confirm the exact source-to-target mappings. The release target fails for missing blocks, unfinished `todo` entries, nonexistent translation targets, missing links, or compile errors.
 
 **Automation cannot certify semantic accuracy.** Open the contact sheet and inspect every figure/algorithm/table page, equations, all footnotes, the bibliography and appendix, and compare the Chinese text against the original PDF—especially two-column boundaries.
+
+> **Prerequisite: visual capability.** Phases 3 and 6 are verified *by looking* — whether a crop is framed correctly, whether a page is readable, whether a glyph is wrong. No script can decide that; the measurement it can produce (“ink is 1.68pt from the border”) cannot tell a legitimate tight crop from a missing legend. If the flow is run by a model that cannot view images, the delivery notes must state plainly that those two phases were **not performed** — never report “not run” as “passed”. `make release` prints which checks ran and which did not.
 
 <details>
 <summary><b>Repository structure</b></summary>

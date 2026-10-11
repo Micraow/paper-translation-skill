@@ -94,9 +94,6 @@ def audit(pdf: Path, mode: str, strict: bool, ref_start_page: int | None = None)
         "fonts_by_page": dict(fonts.most_common()), "warnings": warnings,
         "errors": errors, "page_details": details,
     }
-    # No silent pass with a broken citation path when --strict is selected.
-    if strict and errors:
-        return result
     return result
 
 

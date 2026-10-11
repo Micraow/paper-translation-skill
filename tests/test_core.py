@@ -149,5 +149,116 @@ class PdfTests(unittest.TestCase):
             extracted.close()
 
 
+class VectorRegionGuardTests(unittest.TestCase):
+    """Degenerate-input guards that keep wrong crops out of CI."""
+
+    @staticmethod
+    def _pdf(d: Path) -> Path:
+        src = d / 'source.pdf'
+        doc = fitz.open()
+        page = doc.new_page(width=400, height=400)
+        page.draw_rect(fitz.Rect(60, 60, 200, 160), color=(0, 0, 1), width=2)
+        page.insert_text((70, 100), 'Chart', fontsize=12)
+        doc.save(src)
+        doc.close()
+        return src
+
+    @staticmethod
+    def _manifest(d: Path, src: Path, assets: list[dict]) -> Path:
+        m = d / 'regions.json'
+        m.write_text(json.dumps({'source': str(src), 'output_dir': str(d / 'figures'),
+                                 'assets': assets}), encoding='utf-8')
+        return m
+
+    def test_overlapping_regions_rejected_unless_exempted(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            d = Path(dirname); src = self._pdf(d)
+            m = self._manifest(d, src, [
+                {'page': 1, 'bbox': [50, 50, 210, 170], 'output': 'a.pdf'},
+                {'page': 1, 'bbox': [150, 100, 300, 250], 'output': 'b.pdf'}])
+            res = run_tool('extract_vector_regions.py', m, should_succeed=False)
+            self.assertIn('overlap', res.stdout + res.stderr)
+            m = self._manifest(d, src, [
+                {'page': 1, 'bbox': [50, 50, 210, 170], 'output': 'a.pdf',
+                 'allow_overlap_with': ['b.pdf']},
+                {'page': 1, 'bbox': [150, 100, 300, 250], 'output': 'b.pdf'}])
+            run_tool('extract_vector_regions.py', m)
+
+    def test_empty_region_is_rejected(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            d = Path(dirname); src = self._pdf(d)
+            m = self._manifest(d, src, [{'page': 1, 'bbox': [300, 300, 380, 380], 'output': 'empty.pdf'}])
+            res = run_tool('extract_vector_regions.py', m, should_succeed=False)
+            self.assertIn('empty', (res.stdout + res.stderr).lower())
+
+    def test_duplicate_output_name_is_rejected(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            d = Path(dirname); src = self._pdf(d)
+            m = self._manifest(d, src, [
+                {'page': 1, 'bbox': [50, 50, 210, 170], 'output': 'fig.pdf'},
+                {'page': 1, 'bbox': [220, 200, 320, 300], 'output': 'FIG.pdf'}])
+            res = run_tool('extract_vector_regions.py', m, should_succeed=False)
+            self.assertIn('duplicate output name', res.stdout + res.stderr)
+
+
+class BlockQueryTests(unittest.TestCase):
+    BLOCKS = ['source_id', 'page', 'block', 'x0', 'y0', 'x1', 'y1', 'text']
+
+    def _tsv(self, d: Path) -> Path:
+        p = d / 'source-blocks.tsv'
+        write_tsv(p, self.BLOCKS, [
+            {'source_id': 'p001-b001', 'page': '1', 'block': '1', 'x0': '10', 'y0': '10',
+             'x1': '20', 'y1': '20', 'text': '1 Introduction to the problem'},
+            {'source_id': 'p001-b002', 'page': '1', 'block': '2', 'x0': '10', 'y0': '30',
+             'x1': '20', 'y1': '40', 'text': 'Figure 4: latency under load'},
+            {'source_id': 'p002-b001', 'page': '2', 'block': '1', 'x0': '10', 'y0': '10',
+             'x1': '20', 'y1': '20', 'text': 'The delay is bounded by (7)'},
+        ])
+        return p
+
+    def test_query_filters_by_page_grep_and_kind(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            tsv = self._tsv(Path(dirname))
+            out = run_tool('blocks.py', 'query', tsv, '--page', '1').stdout
+            self.assertIn('p001-b002', out)
+            self.assertNotIn('p002-b001', out)
+            out = run_tool('blocks.py', 'query', tsv, '--grep', r'figure\s*4').stdout
+            self.assertIn('p001-b002', out)
+            self.assertNotIn('p001-b001', out)
+            out = run_tool('blocks.py', 'query', tsv, '--kind', 'equation').stdout
+            self.assertIn('p002-b001', out)
+            self.assertNotIn('p001-b001', out)
+
+    def test_index_is_written_and_size_capped(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            d = Path(dirname); tsv = self._tsv(d); out = d / 'blocks-index.tsv'
+            run_tool('blocks.py', 'index', tsv, '--out', out, '--max-bytes', '200')
+            text = out.read_text(encoding='utf-8')
+            self.assertTrue(text.startswith('source_id\tpage\tkind\tpreview'))
+            self.assertLessEqual(len(text.encode('utf-8')), 400)
+
+
+class RenderOverlayTests(unittest.TestCase):
+    def test_grid_regions_contact_sheet_and_comparison(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            d = Path(dirname); src = d / 'source.pdf'
+            doc = fitz.open(); page = doc.new_page(width=300, height=300)
+            page.draw_rect(fitz.Rect(40, 40, 160, 160), color=(0, 0, 1), width=2)
+            page.insert_text((50, 80), 'Plot', fontsize=12)
+            doc.save(src); doc.close()
+            man = d / 'regions.json'
+            man.write_text(json.dumps({'source': str(src), 'output_dir': str(d / 'figures'),
+                                       'assets': [{'page': 1, 'bbox': [30, 30, 170, 170],
+                                                   'output': 'fig.pdf'}]}), encoding='utf-8')
+            out = d / 'render'
+            run_tool('render_pdf.py', src, out, '--grid', '50', '--regions', man, '--contact-sheet')
+            for name in ('page-001.png', 'grid-page-001.png', 'regions-page-001.png', 'contact-sheet.png'):
+                self.assertTrue((out / name).is_file(), name)
+            run_tool('extract_vector_regions.py', man)
+            run_tool('render_pdf.py', src, out, '--regions', man, '--region-compare')
+            compares = list((out / 'region-compare').glob('compare-*.png'))
+            self.assertEqual(1, len(compares))
+
+
 if __name__=='__main__':
     unittest.main()

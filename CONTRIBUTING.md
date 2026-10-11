@@ -24,6 +24,28 @@ The smoke build uses a **labeled placeholder paper**, not a complete translation
 
 If you touch a PDF manipulation script, include a regression test for the exact failure mode, including annotation behavior when appropriate. If you touch the TeX style, check at least a fresh XeLaTeX build, PDF internal links, the `pdffonts` result, and visual page renders.
 
+## Documentation shape
+
+Keep each rule in **one** place. `SKILL.md` is the only required read and carries the phase
+steps; `references/*.md` carry the *why* and the detail, and must not restate a step that
+already lives in `SKILL.md`. Compilation traps go in `references/PITFALLS.md`, translation
+rules in `references/TRANSLATION.md`, and the delivery checklist in
+`references/QA_CHECKLIST.md`. If you are about to write the same paragraph twice, link to
+the first copy instead.
+
+### Installing into a local skills directory
+
+When copying the skill to a user skills directory (e.g. `~/.workbuddy/skills/paper-translation/`),
+exclude the repository-only weight — it is never read at run time:
+
+```bash
+rsync -a --delete \
+  --exclude '.git' --exclude 'docs/images' --exclude 'tests' --exclude '__pycache__' \
+  ./ ~/.workbuddy/skills/paper-translation/
+```
+
+`.git` and `docs/images` are roughly 93% of the on-disk size and serve only the repository.
+
 ## PR checklist
 
 - [ ] No personal information, API credentials, proprietary fonts or copyrighted input PDFs added.

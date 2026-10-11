@@ -48,6 +48,13 @@ Last successful: make (see build logs)
 Next: finish packet 2, inspect p.6 formula, mark verified rows
 ```
 
+**Keep large extracts off the context.** Prefer the compact packet index (`index.md`)
+for reading, and query `work/source-blocks.tsv` with `scripts/blocks.py query
+--page/--id/--grep` when you need to look something up. Do not `Read` the whole TSV:
+at paper scale it is tens of thousands of characters and re-sending it every turn is the
+single largest avoidable input cost. Re-querying a targeted subset is cheap and does not
+lose coverage — the ledger, not the prompt, is the accounting record.
+
 ## Tool-output budget
 
 | Situation | Context to supply | Keep outside model context |

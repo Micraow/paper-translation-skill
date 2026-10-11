@@ -72,7 +72,25 @@ Always examine which source blocks the group selection includes before accepting
 
 **Important:** In two-column articles with full-width figures or references in mixed layouts, geometric sort order alone may not reflect true semantic order. If the heading-map assertion fails, correct the order or use smaller source-page sections; do not force an incorrect mapping just to make `make release` green.
 
-## 5. Structural release gate
+## 5. Targeted lookups without re-reading the whole TSV
+
+`work/source-blocks.tsv` becomes large at paper scale (a two-column paper easily
+exceeds 90 KB). Prefer the compact per-section packets (`make packets`) for reading,
+and `scripts/blocks.py` for going back to a specific block — a query prints only the
+matching rows, so the full TSV never has to enter the model context again:
+
+```bash
+python3 scripts/blocks.py query work/source-blocks.tsv --page 7
+python3 scripts/blocks.py query work/source-blocks.tsv --grep 'Figure 4' --width 60
+python3 scripts/blocks.py query work/source-blocks.tsv --id p007-b004
+python3 scripts/blocks.py index work/source-blocks.tsv --out work/blocks-index.tsv
+```
+
+Re-querying is expected and fine — it is far cheaper than reloading the whole table.
+`blocks.py index` writes a size-capped compact index (id, page, kind, short preview) as
+the default object to read when a whole-document view is genuinely needed.
+
+## 6. Structural release gate
 
 ```bash
 python3 scripts/validate_coverage.py work/coverage.tsv \

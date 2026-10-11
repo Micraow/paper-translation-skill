@@ -13,17 +13,21 @@ In scholarly PDFs, a visible figure may consist of:
 
 Therefore inspect the page object structure first. If the figure is mixed/vector, crop the source PDF region into a new PDF page. This preserves the original objects and avoids rasterization.
 
-## Vector crop workflow
+## Where the crop box comes from
 
-1. Render the source page.
-2. Generate a coordinate grid with `annotate_page_grid.py`.
-3. Estimate a bounding box in PDF points `[x0, y0, x1, y1]`.
-4. Add it to `assets/regions.json`.
-5. Run `extract_vector_regions.py`.
-6. Inspect the generated preview PNG.
-7. Expand the box if any axis, legend, marker, line, annotation, or border is clipped.
+The command sequence is in `SKILL.md` (Phase 3); this is the *why* behind it.
 
-PyMuPDF uses a top-left origin for page coordinates in these scripts, matching the visual grid output.
+Crop the **figure body**, and derive the box from the figure itself — not from a guess
+about the page margins. A box seeded from a nominal text margin (e.g. “start 4pt below
+the header rule”) shaves a fixed amount off the top of every figure, and a box seeded
+from a column edge swallows the neighbour. Seed from the artwork (the union of the
+author's drawn panel backgrounds, or the extents of the region's own objects), then
+expand until the post-crop ink clears the border. `render_pdf.py --regions` draws the
+manifest boxes on the source page so the alignment is judged by eye in one look.
+
+PyMuPDF uses a top-left origin for page coordinates in these scripts, matching the
+visual grid output. Check whether the manifest is in PDF points (this skill's default)
+before copying coordinates from another tool.
 
 ## Manifest example
 
@@ -73,7 +77,13 @@ If the caption is tightly integrated into the figure and separating it risks cli
 - the table is unusually complex;
 - exact typography/spacing is important;
 - translating internal labels is not required;
-- recreation risks introducing data errors.
+- recreation risks introducing data errors;
+- **the table is vector with no extractable text layer** (`page.get_text()` returns
+  nothing inside the box). Such a table cannot be machine-read, so it must **not** be
+  “transcribed”: recreate it only when every single value is independently corroborated
+  by the surrounding prose or equations, and otherwise preserve it verbatim — listing
+  the retained original headings in the delivery notes. Never guess numbers from a
+  rasterized or text-less table.
 
 In either mode, preserve every numeric value and footnote marker.
 

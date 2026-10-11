@@ -12,6 +12,8 @@ from pathlib import Path
 
 import fitz
 
+from pdf_assets import unique_images
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -21,30 +23,22 @@ def main() -> None:
 
     doc = fitz.open(args.pdf)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    seen: set[int] = set()
     index = []
 
-    for pno, page in enumerate(doc):
-        for img in page.get_images(full=True):
-            xref = int(img[0])
-            if xref in seen:
-                continue
-            seen.add(xref)
-            extracted = doc.extract_image(xref)
-            ext = extracted.get("ext", "bin")
-            data = extracted["image"]
-            name = f"xref-{xref:05d}.{ext}"
-            path = args.out_dir / name
-            path.write_bytes(data)
-            index.append({
-                "xref": xref,
-                "first_seen_page": pno + 1,
-                "file": name,
-                "width": extracted.get("width"),
-                "height": extracted.get("height"),
-                "colorspace": extracted.get("colorspace"),
-                "bpc": extracted.get("bpc"),
-            })
+    for xref, first_page, _img in unique_images(doc):
+        extracted = doc.extract_image(xref)
+        ext = extracted.get("ext", "bin")
+        name = f"xref-{xref:05d}.{ext}"
+        (args.out_dir / name).write_bytes(extracted["image"])
+        index.append({
+            "xref": xref,
+            "first_seen_page": first_page,
+            "file": name,
+            "width": extracted.get("width"),
+            "height": extracted.get("height"),
+            "colorspace": extracted.get("colorspace"),
+            "bpc": extracted.get("bpc"),
+        })
 
     (args.out_dir / "index.json").write_text(
         json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8"

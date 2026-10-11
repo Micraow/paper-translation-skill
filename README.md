@@ -97,7 +97,7 @@ make                        # 编译成功只显示摘要，完整日志在 work
 make release                # 最终仍必须完整覆盖、跳转检查和视觉复核
 ```
 
-较长的工程可用 `prepare_section_packets.py --pending-only --target sections/01-introduction.tex` 续做未核对的部分。工具绝不自动确认 coverage；遇到提取失败的数学符号仍要对照原始 PDF 页面。具体策略见 [Token 优化指南](references/TOKEN_EFFICIENCY.md)。API 的前缀缓存、模型分级由实际调用平台决定，**仓库不承诺未经实测的节省比例**。
+较长的工程可用 `prepare_section_packets.py --pending-only --target sections/01-introduction.tex` 续做未核对的部分。**不要整表重读 `work/source-blocks.tsv`**（真实双栏论文常超过 90 KB）：回查某一页或某一块用 `python3 scripts/blocks.py query work/source-blocks.tsv --page 7 --grep 'Figure 4'`，需要全局视图时读 `blocks.py index` 生成的紧凑索引。工具绝不自动确认 coverage；遇到提取失败的数学符号仍要对照原始 PDF 页面。具体策略见 [Token 优化指南](references/TOKEN_EFFICIENCY.md)。API 的前缀缓存、模型分级由实际调用平台决定，**仓库不承诺未经实测的节省比例**。
 
 ## 快速开始
 
@@ -199,9 +199,17 @@ paper-translation-skill/
 ├── THIRD_PARTY_NOTICES.md    # 原论文/截图/字体/依赖版权说明
 ├── agents/openai.yaml
 ├── requirements.txt
-├── scripts/                  # PDF 提取、矢量裁切、引用恢复、检查脚本
+├── scripts/                  # PDF 提取、矢量裁切、引用恢复、区块查询、检查脚本
 ├── assets/latex-template/    # 无个人信息的 XeLaTeX 模板、Makefile
-├── references/               # 翻译、交叉引用、图表和 QA 的深度说明
+├── references/               # 深度说明（每份只讲一次）
+│   ├── TRANSLATION.md        # 保真度层级、情态、术语、数值单位、引用、源文错误
+│   ├── FIGURES_AND_ALGORITHMS.md  # 图形决策表、裁剪取材与常见缺陷
+│   ├── QA_CHECKLIST.md       # 交付核对表（含需视觉能力的目检清单）
+│   ├── PITFALLS.md           # 跨阶段编译/排版陷阱
+│   ├── COVERAGE_LEDGER.md    # 大规模覆盖台账与回查
+│   ├── REFERENCES_AND_LINKS.md    # 两种参考文献后端
+│   ├── LATEX_CROSSREFERENCES.md   # 语义交叉引用写法与各检查的盲区
+│   └── TOKEN_EFFICIENCY.md   # 上下文预算
 ├── tests/                    # 合成 PDF 的单元与回归测试
 └── docs/images/             # GitHub 展示图，不作为论文中的图
 ```

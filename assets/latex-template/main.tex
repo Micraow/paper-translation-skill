@@ -17,8 +17,29 @@
 % Example: \renewcommand{\OriginalReferencePages}{14-17}
 \newcommand{\OriginalReferencePages}{}
 
-% Build configuration is written by Makefile. Do not hand-edit it.
-\IfFileExists{build/translation-config.tex}{\input{build/translation-config.tex}}{\def\TranslationReferenceMode{native}}
+% The reference backend is written by the Makefile `prepare` target. The path is
+% deliberately fixed and independent of BUILD_DIR, so overriding BUILD_DIR cannot
+% silently select the wrong backend. Build with `make`, not a bare xelatex run.
+\IfFileExists{work/translation-config.tex}{%
+  \input{work/translation-config.tex}%
+}{%
+  \def\TranslationReferenceMode{native}%
+}
+
+% Intent cross-check: a non-empty \OriginalReferencePages declares the `pdf`
+% backend. If the configuration never arrived (bare xelatex, stale checkout), the
+% mode would fall back to `native` and silently emit a re-typeset bibliography
+% instead of the preserved original pages. Fail loudly instead.
+\ifdefempty{\OriginalReferencePages}{}{%
+  \ifdefstring{\TranslationReferenceMode}{pdf}{}{%
+    \PackageError{paper-translation}{%
+      \string\OriginalReferencePages\space is set, but the build mode is
+      '\TranslationReferenceMode'.\MessageBreak
+      Build with `make BIB_MODE=pdf`, or clear \string\OriginalReferencePages}{%
+      The preserved-reference pages backend requires work/translation-config.tex
+      to declare `pdf`. Run `make BIB_MODE=pdf` instead of invoking XeLaTeX directly.}%
+  }%
+}
 
 \begin{document}
 \makepapercover

@@ -12,6 +12,11 @@ This document records practical findings from running the skill on a multi-colum
 | Hundreds of manually assigned ledger rows | Missing scale workflow | `seed_coverage.py` proposes geometry-based asset preservation and title-driven section assignments; `confirm_coverage.py` confirms only reviewed groups; exact-once title assertions; overwrite protection |
 | Source text C0 controls break TSV viewers | Extraction defect | Printable replacement marker U+FFFD; explicit raw option for debugging; rendered source remains authoritative |
 | `pdftex.map` / `kanjix.map` warnings | Environment, not translation | Troubleshooting note only; do not loosen missing-glyph/real QA checks to hide unrelated warnings |
+| The ~98 KB `work/source-blocks.tsv` was re-read 11 times in one run | Missing targeted lookup | `scripts/blocks.py query --page/--id/--grep` + `index`; explicit “never read the TSV whole” guidance in `SKILL.md` and `TOKEN_EFFICIENCY.md` |
+| A second workflow document drifted from `SKILL.md` on the *default* bibliography backend; a hand-written `manifest.txt` listed a file that did not exist | Duplicate source of truth | `references/WORKFLOW.md` and `manifest.txt` removed; workflow is stated once in `SKILL.md`, references carry only the *why* |
+| Region manifest with duplicated output names, out-of-page or unintentionally overlapping boxes | Missing degenerate-input checks | Inline guards in `extract_vector_regions.py`: unique names, in-page non-empty boxes, overlap requires `allow_overlap_with`, and a crop with no text/art/image fails |
+| Crop framing review depended entirely on eyes, with no cheap way to see whether a box matched its figure | Missing overlay render | `render_pdf.py --grid N` / `--regions manifest.json` draw the manifest on the source page; `--region-compare` puts each extracted asset next to its source region at one scale |
+| An automated build with unperformed visual checks was described as “all green” | Reporting gap | Visual capability is stated as a prerequisite in `SKILL.md`; `make release` prints which checks ran and which did not; record reality in `work/run-manifest.json` |
 
 ## Important limits
 

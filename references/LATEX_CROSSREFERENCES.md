@@ -71,9 +71,21 @@ These are **syntax examples only**, not actual source citations. Keep the paper'
 
 This alternate mode does not use native `\cite` because the reference entries are imported PDF vector pages without TeX `\bibitem` anchors. Preserve original numeric `[n]` literals and run the strict GoTo annotation-restoration backend instead. The two modes must not be mixed.
 
-## Audit
+## Checks, and what each one is blind to
 
-- `scripts/check_latex_project.py` discovers nested `\input` and `\include` recursively, checks key existence, duplicate labels, unresolved `\ref`s, and suspicious literal citations in native mode.
-- Real compilation and log checking still required; complex macros and dynamic include paths cannot always be resolved statically.
-- `scripts/audit_pdf.py` checks actual PDF internal link annotations (both GoTo and XeLaTeX named destinations).
-- Open the output PDF and click a sampling of each link category before shipping.
+Commands are named in `SKILL.md` (Phases 4–6). Static and log analysis complement a
+real build; none of them can prove semantic correctness:
+
+- `check_latex_project.py` — resolves nested `\input`/`\include`, catches missing
+  citation keys, duplicate labels, unresolved `\ref`s and suspicious literal citations
+  in native mode. It **cannot** follow computed/dynamic include paths or macros.
+- `check_latex_log.py` — from the real log, fails on undefined references/citations,
+  `Missing character`, and italic/small-caps font-shape substitution. A clean run says
+  nothing about whether the layout is readable.
+- `audit_pdf.py` — inspects the finished PDF’s actual link annotations (GoTo plus
+  XeLaTeX named destinations); with `--strict` it fails when a numeric citation group
+  has no link. Link *counts* cannot prove a link points at the right entry.
+- In `pdf` bibliography mode, `add_reference_links.py` creates those GoTo links and
+  fails when a printed citation number has no target page.
+
+Open the output PDF and click a sample of each link category before shipping.

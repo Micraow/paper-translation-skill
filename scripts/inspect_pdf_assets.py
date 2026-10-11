@@ -12,31 +12,26 @@ from pathlib import Path
 
 import fitz
 
+from pdf_assets import iter_unique_images
+
 
 def page_record(doc: fitz.Document, pno: int) -> dict:
     page = doc[pno]
-    images = page.get_images(full=True)
     drawings = page.get_drawings()
     links = page.get_links()
     fonts = page.get_fonts(full=True)
     text = page.get_text("text")
 
     image_records = []
-    seen = set()
-    for img in images:
-        xref = int(img[0])
-        if xref in seen:
-            continue
-        seen.add(xref)
-        info = {
+    for xref, img in iter_unique_images(page):
+        image_records.append({
             "xref": xref,
             "width": int(img[2]),
             "height": int(img[3]),
             "bpc": int(img[4]),
             "colorspace": str(img[5]),
             "name": str(img[7]),
-        }
-        image_records.append(info)
+        })
 
     font_records = []
     for f in fonts:
